@@ -1,9 +1,8 @@
 package com.codecollab.oj.model.entity;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.*;
+
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import lombok.Data;
 
@@ -13,7 +12,8 @@ import lombok.Data;
  */
 @TableName(value ="question_info")
 @Data
-public class QuestionInfo {
+public class QuestionInfo implements Serializable {
+    private static final long serialVersionUID = 1L;
     /**
      * 主键id
      */
@@ -35,12 +35,12 @@ public class QuestionInfo {
     /**
      * 创建时间
      */
-    @TableField(value = "create_time")
+    @TableField(value = "create_time",fill = FieldFill.INSERT)
     private LocalDateTime createTime;
 
     /**
      * 更新时间
      */
-    @TableField(value = "update_time")
+    @TableField(value = "update_time",fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updateTime;
 }

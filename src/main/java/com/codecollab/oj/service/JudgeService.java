@@ -1,5 +1,7 @@
 package com.codecollab.oj.service;
 
+import com.codecollab.oj.model.entity.QuestionSubmit;
+
 public interface JudgeService {
     /**
      * 提交代码进行判题

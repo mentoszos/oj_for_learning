@@ -1,7 +1,9 @@
 package com.codecollab.oj.controller;
 
 import com.codecollab.oj.common.BaseResponse;
+import com.codecollab.oj.common.constants.ErrorCode;
 import com.codecollab.oj.model.dto.SubmitRequest;
+import com.codecollab.oj.model.entity.QuestionSubmit;
 import com.codecollab.oj.model.vo.SubmitResultVO;
 import com.codecollab.oj.service.JudgeService;
 import lombok.extern.slf4j.Slf4j;
@@ -36,13 +38,7 @@ public class SubmitController {
         SubmitResultVO vo = new SubmitResultVO();
         BeanUtils.copyProperties(submit, vo);
 
-        // 解析judgeInfo
-        if (submit.getJudgeInfo() != null) {
-            vo.setJudgeInfo(com.alibaba.fastjson2.JSON.parseObject(
-                submit.getJudgeInfo(),
-                SubmitResultVO.JudgeInfo.class
-            ));
-        }
+
 
         return BaseResponse.success(vo);
     }
@@ -51,19 +47,13 @@ public class SubmitController {
     public BaseResponse<SubmitResultVO> getSubmitResult(@PathVariable Long submitId) {
         QuestionSubmit submit = judgeService.getSubmitResult(submitId);
         if (submit == null) {
-            return BaseResponse.error("提交记录不存在");
+            return BaseResponse.error(ErrorCode.NOT_FOUND_ERROR,"提交记录不存在");
         }
 
         SubmitResultVO vo = new SubmitResultVO();
         BeanUtils.copyProperties(submit, vo);
 
-        // 解析judgeInfo
-        if (submit.getJudgeInfo() != null) {
-            vo.setJudgeInfo(com.alibaba.fastjson2.JSON.parseObject(
-                submit.getJudgeInfo(),
-                SubmitResultVO.JudgeInfo.class
-            ));
-        }
+
 
         return BaseResponse.success(vo);
     }
