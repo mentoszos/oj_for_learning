@@ -6,12 +6,10 @@
 
     <resultMap id="BaseResultMap" type="com.codecollab.oj.model.entity.Question">
             <id property="id" column="id" />
-            <result property="tag" column="tag" />
+            <result property="tags" column="tags" />
             <result property="submitNum" column="submit_num" />
             <result property="acceptedNum" column="accepted_num" />
             <result property="userId" column="user_id" />
-            <result property="timeLimit" column="time_limit" />
-            <result property="memoryLimit" column="memory_limit" />
             <result property="title" column="title" />
             <result property="createTime" column="create_time" />
             <result property="updateTime" column="update_time" />

@@ -49,4 +49,25 @@ public class QuestionUsecase {
      */
     @TableField(value = "update_time")
     private LocalDateTime updateTime;
+
+    /**
+     *
+     */
+    @TableField(value = "active")
+    private Boolean active;
+
+
+    @TableField(value = "number")
+    private Integer number;
+    /**
+     * ms
+     */
+    @TableField(value = "time_limit")
+    private Integer timeLimit;
+
+    /**
+     * MB
+     */
+    @TableField(value = "memory_limit")
+    private Integer memoryLimit;
 }

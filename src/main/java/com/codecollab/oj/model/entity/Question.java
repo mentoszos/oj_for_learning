@@ -1,30 +1,35 @@
 package com.codecollab.oj.model.entity;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.*;
+
+import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.List;
+
+import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
 import lombok.Data;
 
 /**
  * 题目表
  * @TableName question
  */
-@TableName(value ="question")
+@TableName(value ="question",autoResultMap = true)
 @Data
-public class Question {
+public class Question implements Serializable {
+    private static final long serialVersionUID = 1L;
     /**
      * 主键id
      */
     @TableId(value = "id", type = IdType.AUTO)
     private Integer id;
 
+    @TableId(value = "usecase_count")
+    private Integer usecaseCount;
     /**
      * 题目标签列表，需要转为字符串
      */
-    @TableField(value = "tag")
-    private String tag;
+    @TableField(value = "tags",typeHandler = JacksonTypeHandler.class)
+    private List<String> tags;
 
     /**
      * 该题的提交数
@@ -44,17 +49,7 @@ public class Question {
     @TableField(value = "user_id")
     private Integer userId;
 
-    /**
-     * 时间限制，单位ms，默认1000
-     */
-    @TableField(value = "time_limit")
-    private Integer timeLimit;
 
-    /**
-     * 内存限制，单位MB，默认256
-     */
-    @TableField(value = "memory_limit")
-    private Integer memoryLimit;
 
     /**
      * 题目标题
@@ -65,12 +60,13 @@ public class Question {
     /**
      * 创建时间
      */
-    @TableField(value = "create_time")
+    @TableField(value = "create_time",fill = FieldFill.INSERT)
     private LocalDateTime createTime;
 
     /**
      * 更新时间
      */
-    @TableField(value = "update_time")
+    @TableField(value = "update_time",fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updateTime;
+
 }

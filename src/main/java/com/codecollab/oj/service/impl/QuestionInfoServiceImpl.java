@@ -1,5 +1,6 @@
 package com.codecollab.oj.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.codecollab.oj.model.entity.QuestionInfo;
 import com.codecollab.oj.service.QuestionInfoService;
@@ -15,6 +16,13 @@ import org.springframework.stereotype.Service;
 public class QuestionInfoServiceImpl extends ServiceImpl<QuestionInfoMapper, QuestionInfo>
     implements QuestionInfoService{
 
+    @Override
+    public QuestionInfo getByQuestionId(Integer questionId) {
+        LambdaQueryWrapper<QuestionInfo> queryWrapper = new LambdaQueryWrapper();
+        queryWrapper.eq(QuestionInfo::getQuestionId,questionId);
+        QuestionInfo questionInfo = this.getOne(queryWrapper);
+        return questionInfo;
+    }
 }
 
 

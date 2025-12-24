@@ -2,6 +2,7 @@ package com.codecollab.oj.service;
 
 import com.codecollab.oj.model.entity.QuestionSubmit;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.codecollab.oj.model.vo.SubmitResultVO;
 
 /**
 * @author jack li
@@ -10,4 +11,5 @@ import com.baomidou.mybatisplus.extension.service.IService;
 */
 public interface QuestionSubmitService extends IService<QuestionSubmit> {
 
+    SubmitResultVO getSubmitResult(Integer questionId, Integer userId);
 }

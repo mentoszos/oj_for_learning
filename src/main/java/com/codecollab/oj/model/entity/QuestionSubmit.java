@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import lombok.Data;
 
@@ -13,7 +15,8 @@ import lombok.Data;
  */
 @TableName(value ="question_submit")
 @Data
-public class QuestionSubmit {
+public class QuestionSubmit implements Serializable {
+    private static final long serialVersionUID = 1L;
     /**
      * 主键id
      */
@@ -42,7 +45,7 @@ public class QuestionSubmit {
      * 判题结果详情，json存储{usercase：1 time：1200 memory：256 "message": "Runtime Error", "pass_count": 5, "total_count": 10}}
      */
     @TableField(value = "judge_info")
-    private Object judgeInfo;
+    private JudgeInfo judgeInfo;
 
     /**
      * 本条记录创建时间
