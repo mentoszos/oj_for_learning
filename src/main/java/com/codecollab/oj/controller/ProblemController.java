@@ -140,7 +140,15 @@ public class ProblemController {
         return BaseResponse.error(ErrorCode.OPERATION_ERROR,"新增失败");
     }
 
-    @PostMapping(/)
+    @PostMapping("/usecase/batch")
+    @Operation(description = "批量删除测试用例")
+    public BaseResponse<?> delBatchUsecase(@RequestBody DeleteRequest deleteRequest){
+        ThrowUtils.throwIf(ObjectUtil.isEmpty(deleteRequest),ErrorCode.NULL_ERROR);
+        List<Long> ids = deleteRequest.getIds();
+        boolean b = questionUsecaseService.removeBatchByIds(ids);
+        if (b) return BaseResponse.success(b);
+        return BaseResponse.error(ErrorCode.OPERATION_ERROR,"删除失败");
+    }
 
 
 
@@ -184,4 +192,6 @@ public class ProblemController {
         UsecaseVO usecaseVO = BeanUtil.copyProperties(usecase, UsecaseVO.class);
         return BaseResponse.success(usecaseVO);
     }
+
+    //todo 题解的增删改查
 }
