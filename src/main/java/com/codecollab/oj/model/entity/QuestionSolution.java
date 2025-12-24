@@ -6,16 +6,13 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
-import java.io.Serializable;
-
 /**
  * 题解
  * @TableName question_solution
  */
 @TableName(value ="question_solution")
 @Data
-public class QuestionSolution implements Serializable {
-    private static final long serialVersionUID = 1L;
+public class QuestionSolution {
     /**
      * 主键id
      */

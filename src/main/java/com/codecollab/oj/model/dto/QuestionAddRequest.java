@@ -3,16 +3,14 @@ package com.codecollab.oj.model.dto;
 import com.codecollab.oj.model.entity.QuestionUsecase;
 import lombok.Data;
 
-import java.io.Serializable;
 import java.util.List;
 
 @Data
-public class QuestionAddRequest implements Serializable {
-    private static final long serialVersionUID = 1L;
+public class QuestionAddRequest {
     /**
      * 题目标签列表，列表
      */
-    private List<String> tags;
+    private List<String> tag;
 
     /**
      * 时间限制，单位ms，默认1000

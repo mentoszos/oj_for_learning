@@ -3,8 +3,6 @@ package com.codecollab.oj.service.impl;
 import com.alibaba.fastjson2.JSON;
 import com.codecollab.oj.mapper.QuestionMapper;
 import com.codecollab.oj.mapper.QuestionSubmitMapper;
-import com.codecollab.oj.model.entity.Question;
-import com.codecollab.oj.model.entity.QuestionSubmit;
 import com.codecollab.oj.service.JudgeService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -33,7 +31,7 @@ public class JudgeServiceImpl implements JudgeService {
     private static final String JUDGE_QUEUE = "code_judge_queue";
 
     @Override
-    public QuestionSubmit submitCode(Integer questionId, String code, String language, Long userId) {
+    public QuestionSubmit submitCode(Long questionId, String code, String language, Long userId) {
         // 1. 创建提交记录
         QuestionSubmit submit = new QuestionSubmit();
         submit.setQuestionId(questionId);
