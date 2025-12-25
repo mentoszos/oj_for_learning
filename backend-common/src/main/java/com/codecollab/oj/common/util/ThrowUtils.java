@@ -1,4 +1,4 @@
-package com.codecollab.oj.util;
+package com.codecollab.oj.common.util;
 
 import com.codecollab.oj.common.constants.ErrorCode;
 import com.codecollab.oj.exception.BusinessException;
