@@ -1,6 +1,6 @@
 package com.codecollab.oj.exception;
 
-import com.codecollab.oj.common.constants.ErrorCode;
+import com.codecollab.oj.common.enums.ErrorCode;
 import lombok.Getter;
 
 /**

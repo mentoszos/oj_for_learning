@@ -18,6 +18,7 @@
     <packaging>pom</packaging> <modules>
     <module>backend-common</module>
     <module>backend-main</module>
+    <module>backend-sandbox</module>
 </modules>
 
     <properties>

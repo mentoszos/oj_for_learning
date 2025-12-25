@@ -17,6 +17,11 @@
             <groupId>com.codecollab</groupId>
             <artifactId>backend-common</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.codecollab</groupId>
+            <artifactId>backend-sandbox</artifactId>
+            <version>1.0.0</version>
+        </dependency>
 
         <dependency>
             <groupId>org.springframework.boot</groupId>

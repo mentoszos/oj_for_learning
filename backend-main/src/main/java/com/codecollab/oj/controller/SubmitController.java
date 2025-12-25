@@ -1,7 +1,7 @@
 package com.codecollab.oj.controller;
 
 import com.codecollab.oj.common.BaseResponse;
-import com.codecollab.oj.common.constants.ErrorCode;
+import com.codecollab.oj.common.enums.ErrorCode;
 import com.codecollab.oj.model.dto.SubmitRequest;
 import com.codecollab.oj.model.entity.QuestionSubmit;
 import com.codecollab.oj.model.vo.SubmitResultVO;

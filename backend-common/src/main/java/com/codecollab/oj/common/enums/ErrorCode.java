@@ -1,4 +1,4 @@
-package com.codecollab.oj.common.constants;
+package com.codecollab.oj.common.enums;
 
 import lombok.Getter;
 

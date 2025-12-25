@@ -1,6 +1,6 @@
-package com.codecollab.oj.common.util;
+package com.codecollab.oj.util;
 
-import com.codecollab.oj.common.constants.ErrorCode;
+import com.codecollab.oj.common.enums.ErrorCode;
 import com.codecollab.oj.exception.BusinessException;
 
 public class ThrowUtils {

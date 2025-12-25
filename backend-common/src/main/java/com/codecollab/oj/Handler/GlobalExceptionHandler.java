@@ -1,7 +1,7 @@
 package com.codecollab.oj.Handler;
 
 import com.codecollab.oj.common.BaseResponse;
-import com.codecollab.oj.common.constants.ErrorCode;
+import com.codecollab.oj.common.enums.ErrorCode;
 import com.codecollab.oj.exception.BusinessException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.ExceptionHandler;
