@@ -5,6 +5,7 @@ import lombok.Data;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -14,6 +15,8 @@ public class ExecuteCodeRequest implements Serializable {
 
     private String code;
     private SubmitLanguageType languageType;
-    private List<String> inputs;
+    private ArrayList<String> inputs;
+    private ArrayList<String> outputs;
+    private ArrayList<Long> timeLimits; //ms
 
 }

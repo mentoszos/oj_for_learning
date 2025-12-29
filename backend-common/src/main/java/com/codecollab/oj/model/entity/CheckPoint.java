@@ -1,5 +1,6 @@
 package com.codecollab.oj.model.entity;
 
+import com.codecollab.oj.common.enums.SubmitStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,6 +19,8 @@ public class CheckPoint {
     private Integer memory; // 使用的内存，MB
 
     private Integer time; // 耗时，ms
+
+    private SubmitStatus submitStatus;
 
 
 }
