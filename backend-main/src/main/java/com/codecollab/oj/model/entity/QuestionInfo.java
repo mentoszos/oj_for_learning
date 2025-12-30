@@ -10,7 +10,7 @@ import lombok.Data;
  * 题目详情
  * @TableName question_info
  */
-@TableName(value ="question_info")
+@TableName(value ="question_info",autoResultMap = true)
 @Data
 public class QuestionInfo implements Serializable {
     private static final long serialVersionUID = 1L;

@@ -1,19 +1,18 @@
 package com.codecollab.oj.model.entity;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.*;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
+
+import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
 import lombok.Data;
 
 /**
  * 题目提交记录
  * @TableName question_submit
  */
-@TableName(value ="question_submit")
+@TableName(value ="question_submit",autoResultMap = true)
 @Data
 public class QuestionSubmit implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -44,19 +43,19 @@ public class QuestionSubmit implements Serializable {
     /**
      * 判题结果详情，json存储{usercase：1 time：1200 memory：256 "message": "Runtime Error", "pass_count": 5, "total_count": 10}}
      */
-    @TableField(value = "judge_info")
+    @TableField(value = "judge_info",typeHandler = JacksonTypeHandler.class)
     private JudgeInfo judgeInfo;
 
     /**
-     * 本条记录创建时间
+     * 创建时间
      */
-    @TableField(value = "create_time")
+    @TableField(value = "create_time",fill = FieldFill.INSERT)
     private LocalDateTime createTime;
 
     /**
-     * 本条记录更新时间
+     * 更新时间
      */
-    @TableField(value = "update_time")
+    @TableField(value = "update_time",fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updateTime;
 
     /**

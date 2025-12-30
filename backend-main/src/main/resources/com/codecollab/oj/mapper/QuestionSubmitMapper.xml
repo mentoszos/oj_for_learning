@@ -9,7 +9,7 @@
             <result property="questionId" column="question_id" />
             <result property="userId" column="user_id" />
             <result property="status" column="status" />
-            <result property="judgeInfo" column="judge_info" />
+            <result property="judgeInfo" column="judge_info" typeHandler="com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler"/>
             <result property="createTime" column="create_time" />
             <result property="updateTime" column="update_time" />
             <result property="sumbitCode" column="sumbit_code" />

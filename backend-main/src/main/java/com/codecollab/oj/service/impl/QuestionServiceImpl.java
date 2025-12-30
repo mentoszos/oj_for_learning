@@ -9,9 +9,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.codecollab.oj.context.UserHolder;
 import com.codecollab.oj.model.dto.*;
-import com.codecollab.oj.model.entity.Question;
-import com.codecollab.oj.model.entity.QuestionInfo;
-import com.codecollab.oj.model.entity.QuestionUsecase;
+import com.codecollab.oj.model.entity.*;
 import com.codecollab.oj.model.vo.PageVO;
 import com.codecollab.oj.model.vo.QuestionVO;
 import com.codecollab.oj.service.*;
@@ -49,7 +47,9 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
         Question question = BeanUtil.copyProperties(questionAddRequest, Question.class);
         question.setSubmitNum(0);
         question.setAcceptedNum(0);
-        question.setUserId(UserHolder.getUserId());
+        //todo 这里先默认写一下
+//        question.setUserId(UserHolder.getUserId());
+        question.setUserId(1);
         this.save(question);
 
         Integer questionId = question.getId();
@@ -58,11 +58,14 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
         questionInfo.setQuestionId(questionId);
         questionInfoService.save(questionInfo);
 
+        //测试用例
         List<QuestionUsecaseAddRequest> usecases = questionAddRequest.getUsecases();
         List<QuestionUsecase> usecaseList = new LinkedList<>();
+        int count =0;
         for(QuestionUsecaseAddRequest usecaseAddRequest:usecases){
             QuestionUsecase questionUsecase = BeanUtil.copyProperties(usecaseAddRequest, QuestionUsecase.class);
             questionUsecase.setQuestionId(questionId);
+            questionUsecase.setNumber(++count);
             usecaseList.add(questionUsecase);
         }
         questionUsecaseService.saveBatch(usecaseList);
@@ -96,12 +99,26 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
     }
 
     @Override
+    @Transactional
     public boolean removeQuestionsById(Long id) {
-        questionInfoService.removeById(id);
-        questionUsecaseService.removeById(id);
-        questionSolutionService.removeById(id);
-        questionSubmitService.removeById(id);
-        return this.removeById(id);
+        Long questionId=id;
+        LambdaQueryWrapper<QuestionUsecase> usecaseLambdaQueryWrapper = new LambdaQueryWrapper<>();
+        usecaseLambdaQueryWrapper.eq(QuestionUsecase::getQuestionId,questionId);
+        questionUsecaseService.remove(usecaseLambdaQueryWrapper);
+
+        LambdaQueryWrapper<QuestionInfo> questionInfoLambdaQueryWrapper = new LambdaQueryWrapper<>();
+        questionInfoLambdaQueryWrapper.eq(QuestionInfo::getQuestionId,questionId);
+        questionInfoService.remove(questionInfoLambdaQueryWrapper);
+
+        LambdaQueryWrapper<QuestionSolution> solutionLambdaQueryWrapper = new LambdaQueryWrapper<>();
+        solutionLambdaQueryWrapper.eq(QuestionSolution::getQuestionId,questionId);
+        questionSolutionService.remove(solutionLambdaQueryWrapper);
+
+        LambdaQueryWrapper<QuestionSubmit> submitLambdaQueryWrapper = new LambdaQueryWrapper<>();
+        submitLambdaQueryWrapper.eq(QuestionSubmit::getQuestionId,questionId);
+        questionSubmitService.remove(submitLambdaQueryWrapper);
+        this.removeById(id);
+        return true;
     }
 
     @Override
@@ -133,6 +150,12 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
         question.setTitle(questionModifyRequest.getTitle());
         question.setTags(questionModifyRequest.getTags());
         this.updateById(question);
+
+        QuestionInfo questionInfo = new QuestionInfo();
+        questionInfo.setContent(questionModifyRequest.getContent());
+        LambdaQueryWrapper<QuestionInfo>questionInfoLambdaQueryWrapper = new LambdaQueryWrapper<>();
+        questionInfoLambdaQueryWrapper.eq(QuestionInfo::getQuestionId,questionModifyRequest.getId());
+        questionInfoService.update(questionInfo,questionInfoLambdaQueryWrapper);
 
         List<QuestionUsecaseModifyRequest> usecaseModifyRequestList = questionModifyRequest.getUsecaseModifyRequestList();
         if (CollectionUtil.isEmpty(usecaseModifyRequestList)) return false;

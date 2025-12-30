@@ -12,6 +12,7 @@ import java.util.List;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
+//用户分页查询的大包装类
 public class PageVO<T> implements Serializable {
     private static final long serialVersionUID = 1L;
     private List<T> records;

@@ -6,17 +6,17 @@
 
     <resultMap id="BaseResultMap" type="com.codecollab.oj.model.entity.Question">
             <id property="id" column="id" />
-            <result property="tags" column="tags" />
+            <result property="tags" column="tags" typeHandler="com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler"/>
             <result property="submitNum" column="submit_num" />
             <result property="acceptedNum" column="accepted_num" />
             <result property="userId" column="user_id" />
             <result property="title" column="title" />
             <result property="createTime" column="create_time" />
             <result property="updateTime" column="update_time" />
+            <result property="usecaseCount" column="usecase_count" />
     </resultMap>
 
     <sql id="Base_Column_List">
-        id,tag,submit_num,accepted_num,user_id,time_limit,
-        memory_limit,title,create_time,update_time
+        id,tags,submit_num,accepted_num,user_id,title,create_time,update_time,usecase_count
     </sql>
 </mapper>

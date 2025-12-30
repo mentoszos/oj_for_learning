@@ -10,4 +10,9 @@ public class QuestionUsecaseModifyRequest implements Serializable {
     private Integer id;
     private String input;
     private String output;
+    private Boolean active;
+    //时间，ms
+    private Integer timeLimit;
+    //内存,MB
+    private Integer memoryLimit;
 }

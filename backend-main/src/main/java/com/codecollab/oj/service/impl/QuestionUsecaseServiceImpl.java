@@ -41,7 +41,7 @@ public class QuestionUsecaseServiceImpl extends ServiceImpl<QuestionUsecaseMappe
         Integer questionId = questionAddRequestList.get(0).getQuestionId();
         LambdaQueryWrapper<QuestionUsecase> getCount = new LambdaQueryWrapper();
         getCount.eq(QuestionUsecase::getQuestionId,questionId);
-        int index = (int) this.count(getCount);//index字段用于更新number
+        int index = (int) this.count(getCount);//index字段用于更新number,index从0开始
         int activeCount =0;//统计插入中有几个是启用的，用于更新usecase_count
 
         List<QuestionUsecase> collect = new LinkedList<>();

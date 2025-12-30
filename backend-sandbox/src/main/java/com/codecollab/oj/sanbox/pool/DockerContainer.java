@@ -39,7 +39,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 @Slf4j
 @Data
-@Builder
+
 public class DockerContainer {
     private final String containerId;
     private final DockerClient dockerClient;
@@ -47,6 +47,7 @@ public class DockerContainer {
     public final String type;
     public final String memPath;
 
+    @Builder
     public DockerContainer(String containerId,DockerClient dockerClient){
         this.dockerClient = dockerClient;
         this.containerId = containerId;

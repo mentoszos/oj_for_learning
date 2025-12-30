@@ -2,6 +2,7 @@ package com.codecollab.oj.common.enums;
 
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
+import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.Getter;
 
 import java.util.Arrays;
@@ -16,7 +17,9 @@ public enum SubmitLanguageType {
     PYTHON("Python", "python"),
     GOLANG("Go", "go"),
     JAVASCRIPT("JavaScript", "javascript");
+
     private final String text;
+    @JsonValue
     private final String value;
 
     SubmitLanguageType(String text, String value) {
@@ -25,6 +28,7 @@ public enum SubmitLanguageType {
     }
 
     //获取值列表
+
     public static List<String> getValues(){
         return Arrays.stream(values()).map(item->item.value).collect(Collectors.toList());
     }

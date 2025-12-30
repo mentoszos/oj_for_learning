@@ -23,7 +23,7 @@ public class Question implements Serializable {
     @TableId(value = "id", type = IdType.AUTO)
     private Integer id;
 
-    @TableId(value = "usecase_count")
+    @TableField(value = "usecase_count")
     private Integer usecaseCount;
     /**
      * 题目标签列表，需要转为字符串

@@ -26,7 +26,7 @@ import java.util.List;
 @RestController
 @RequestMapping(("/questions"))
 @Slf4j
-@Tag(name = "questions",description = "题目管理")
+@Tag(name = "题目管理模块",description = "题目管理")
 public class ProblemController {
     private QuestionService questionService;
     private QuestionInfoService questionInfoService;
@@ -41,7 +41,7 @@ public class ProblemController {
     }
 
     @GetMapping("/{id}")
-    @Operation(description = "根据id查")
+    @Operation(summary = "根据id查题目")
     public BaseResponse<QuestionVO> getQuestion(@PathVariable Integer id){
         ThrowUtils.throwIf(ObjectUtil.isAllEmpty(id), ErrorCode.NOT_FOUND_ERROR,"参数不能为空");
         QuestionVO questionVO = questionService.getQuestionById(id);
@@ -49,7 +49,7 @@ public class ProblemController {
     }
 
     @GetMapping("/page")
-    @Operation(description = "条件查分页")
+    @Operation(summary = "条件查分页")
     public BaseResponse<PageVO<QuestionVO>> getQuestions(QuestionQueryRequest questionQueryRequest){
         ThrowUtils.throwIf(ObjectUtil.isAllEmpty(questionQueryRequest), ErrorCode.NOT_FOUND_ERROR,"参数不能为空");
         PageVO<QuestionVO> questions = questionService.getQuestions(questionQueryRequest);
@@ -57,7 +57,7 @@ public class ProblemController {
     }
 
     @PutMapping
-    @Operation(description = "修改题目信息")
+    @Operation(summary = "修改题目信息")
     public BaseResponse updateQuestion(@RequestBody QuestionModifyRequest questionModifyRequest){
         ThrowUtils.throwIf(ObjectUtil.isAllEmpty(questionModifyRequest), ErrorCode.NOT_FOUND_ERROR,"参数不能为空");
         boolean b = questionService.modify(questionModifyRequest);
@@ -67,7 +67,7 @@ public class ProblemController {
         return BaseResponse.error(ErrorCode.OPERATION_ERROR,"修改题目信息失败");
     }
     @DeleteMapping("/{id}")
-    @Operation(description = "根据id删")
+    @Operation(summary = "根据id删题目")
     public BaseResponse delQuestion(@PathVariable Long id){
         ThrowUtils.throwIf(ObjectUtil.isAllEmpty(id), ErrorCode.NOT_FOUND_ERROR,"参数不能为空");
         boolean b = questionService.removeQuestionsById(id);
@@ -76,7 +76,7 @@ public class ProblemController {
     }
 
     @DeleteMapping("/batch")
-    @Operation(description = "批量根据ids删")
+    @Operation(summary = "批量根据ids删题目")
     public BaseResponse delQuestions(@RequestBody DeleteRequest deleteRequest){
         ThrowUtils.throwIf(ObjectUtil.isAllEmpty(deleteRequest), ErrorCode.NOT_FOUND_ERROR,"参数不能为空");
         List<Long> ids = deleteRequest.getIds();
@@ -86,6 +86,7 @@ public class ProblemController {
     }
 
     @PostMapping
+    @Operation(summary = "添加问题")
     public BaseResponse<Integer> addQuestion(@RequestBody QuestionAddRequest questionAddRequest){
         ThrowUtils.throwIf(ObjectUtil.isAllEmpty(questionAddRequest), ErrorCode.NOT_FOUND_ERROR,"参数不能为空");
         log.info("问题添加,题目为：{}",questionAddRequest.getTitle());
@@ -93,31 +94,31 @@ public class ProblemController {
         if(b) return BaseResponse.success();
         return BaseResponse.error(ErrorCode.OPERATION_ERROR,"添加题目失败");
     }
-
+/// /////////////////////
     @GetMapping("/info/{questionId}")
-    @Operation(description = "题目内容查询")
+    @Operation(summary = "题目文本查询")
     public BaseResponse<QuestionInfo> questionInfo(@PathVariable Integer questionId){
         ThrowUtils.throwIf(ObjectUtil.isNull(questionId),ErrorCode.NULL_ERROR);
         QuestionInfo questionInfo = questionInfoService.getByQuestionId(questionId);
         return BaseResponse.success(questionInfo);
     }
-
-    @GetMapping("/submit")
-    @Operation(description = "查询用户某一题的提交记录")
+/// /////
+    @GetMapping("/submitRecord")
+    @Operation(summary = "查询用户某一题的提交记录")
     public BaseResponse<SubmitResultVO> submitResult(@RequestParam Integer questionId, @RequestParam Integer userId){
         ThrowUtils.throwIf(!(ObjectUtil.isNotEmpty(questionId) && ObjectUtil.isNotEmpty(userId)), ErrorCode.NULL_ERROR,"查询用户的提交记录，参数不全");
         SubmitResultVO resultVo= questionSubmitService.getSubmitResult(questionId,userId);
         return BaseResponse.success(resultVo);
     }
-    @DeleteMapping("/submit")
-    @Operation(description = "删除某一个记录")
+    @DeleteMapping("/submitRecord")
+    @Operation(summary = "删除某一个提交记录")
     public BaseResponse<?> delSubmitResult(@RequestParam Long id){
         boolean b = questionSubmitService.removeById(id);
         if (b) return BaseResponse.success(b);
         return BaseResponse.error(ErrorCode.OPERATION_ERROR,"删除失败");
     }
-    @PostMapping("/submit/batch")
-    @Operation(description = "批量删除记录")
+    @PostMapping("/submitRecord/batch")
+    @Operation(summary = "批量删除提交记录")
     public BaseResponse<?> delBatchSubmitResult(@RequestBody DeleteRequest deleteRequest){
         List<Long> ids = deleteRequest.getIds();
         boolean b = questionSubmitService.removeBatchByIds(ids);
@@ -128,17 +129,17 @@ public class ProblemController {
 
     /// ////////////////////////////////////////////////////////////////////////////
     @PostMapping("/usecase")
-    @Operation(description = "批量增加测试用例")
+    @Operation(summary = "批量增加测试用例")
     public BaseResponse<?> addBatchUsecase(@RequestBody List<QuestionUsecaseAddRequest> questionUsecaseAddRequests){
         ThrowUtils.throwIf(ObjectUtil.isEmpty(questionUsecaseAddRequests),ErrorCode.NULL_ERROR);
-
+        //todo 这里需要加上number的注入
         boolean b = questionUsecaseService.saveBatchUsecase(questionUsecaseAddRequests);
         if (b) return BaseResponse.success(b);
         return BaseResponse.error(ErrorCode.OPERATION_ERROR,"新增失败");
     }
 
     @PostMapping("/usecase/batch")
-    @Operation(description = "批量删除测试用例")
+    @Operation(summary = "批量删除测试用例")
     public BaseResponse<?> delBatchUsecase(@RequestBody DeleteRequest deleteRequest){
         ThrowUtils.throwIf(ObjectUtil.isEmpty(deleteRequest),ErrorCode.NULL_ERROR);
         List<Long> ids = deleteRequest.getIds();
@@ -150,7 +151,7 @@ public class ProblemController {
 
 
     @PostMapping("/usecase/page")
-    @Operation(description = "分页查询测试用例")
+    @Operation(summary = "分页查询测试用例")
     //只会返回id，和number，具体的内容需要调用getUsecase获取
     public BaseResponse<PageVO<List<UsecaseVO>>> usecasePage(@RequestBody QuestionUsecaseQueryRequest queryRequest){
         ThrowUtils.throwIf(ObjectUtil.isEmpty(queryRequest),ErrorCode.NULL_ERROR);
@@ -159,7 +160,7 @@ public class ProblemController {
         return BaseResponse.success(pageResult);
     }
     @GetMapping("/usecase/input")
-    @Operation(description = "查询测试用例的输入")
+    @Operation(summary = "查询测试用例的输入")
     //todo
     //后期可以考虑返回文件或者其他形式
     public BaseResponse<String> usecaseInput(@RequestParam Long id){
@@ -169,7 +170,7 @@ public class ProblemController {
     }
 
     @GetMapping("/usecase/output")
-    @Operation(description = "查询测试用例的输出")
+    @Operation(summary = "查询测试用例的输出")
     //todo
     //后期可以考虑返回文件或者其他形式
     public BaseResponse<String> usecaseOutput(@RequestParam Long id){
@@ -181,7 +182,7 @@ public class ProblemController {
 
 
     @GetMapping("/usecase")
-    @Operation(description = "查询详细的测试用例")
+    @Operation(summary = "查询详细的测试用例")
     //这个接口暂时用不到
     public BaseResponse<UsecaseVO> getUsecase(@RequestParam Integer id){
         ThrowUtils.throwIf(ObjectUtil.isEmpty(id),ErrorCode.NULL_ERROR);
