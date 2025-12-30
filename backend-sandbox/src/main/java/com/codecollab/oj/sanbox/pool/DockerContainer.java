@@ -67,17 +67,7 @@ public class DockerContainer {
                 super.onNext(frame);
             }
         };
-//        final long[] maxMemory = {0L};
-//        ResultCallback<Statistics> statsCallback = dockerClient.statsCmd(containerId).exec(new ResultCallback.Adapter<Statistics>(){
-//            @Override
-//            public void onNext(Statistics stats) {
-//                long curMemory = 0;
-//                if(ObjectUtil.isNotEmpty(stats.getMemoryStats().getUsage()))
-//                    curMemory = stats.getMemoryStats().getUsage();//这里不能用maxUsage，他记录的是容器创建以来的最大值，只能监控
-//                //方法里能自动传对象，但是很难把 long maxMemory这种局部变量传进去还能实时修改
-//                maxMemory[0] = Math.max(maxMemory[0], curMemory);//居然只能是对象，idea能标出来，太智能了
-//            }
-//        });statsCallback.close();
+
 
 
         AtomicLong maxMemory = new AtomicLong(0L);
@@ -107,8 +97,10 @@ public class DockerContainer {
                 execStartCmd.withStdIn(inputStream);
             }
             long startTime = getCpuTimeTOMilSeconds();
+            ResultCallback.Adapter<Frame> exec = execStartCmd.exec(frameAdapter);
+            if (inputStream!=null) inputStream.close();
             //给网络阻塞等原因留点时间，传进来的timmeoutseconds还是cpu执行的时间，这里只是预留一下给他加0.5s
-            boolean completion = execStartCmd.exec(frameAdapter).awaitCompletion(timeoutMilSeconds + 5000, TimeUnit.MILLISECONDS);
+            boolean completion = exec.awaitCompletion(timeoutMilSeconds + 500, TimeUnit.MILLISECONDS);
             long endTime = getCpuTimeTOMilSeconds();
             long cputimeUsed = endTime - startTime; //ms
             if (Boolean.FALSE.equals(completion)) {//因为要跑所有测试用例，所以这里不把代码删了
@@ -128,8 +120,10 @@ public class DockerContainer {
                     .memory((maxMemory.get() / 1024.0 / 1024))
                     .build();
             return executeMessage;
-        } catch (RuntimeException | IOException e) {
+        } catch (RuntimeException  e) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, e.getMessage());
+        } catch (IOException e) {
+            log.warn("关闭 测试用例inputstream 失败", e);
         } finally {
             // 关闭 frameAdapter - 这是导致管道错误的主要原因
             try {
@@ -156,6 +150,7 @@ public class DockerContainer {
                 log.warn("关闭输入流失败", e);
             }
         }
+        return null;
     }
 
 
