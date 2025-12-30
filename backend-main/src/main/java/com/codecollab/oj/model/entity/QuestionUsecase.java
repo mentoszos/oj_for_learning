@@ -67,5 +67,5 @@ public class QuestionUsecase {
      * MB
      */
     @TableField(value = "memory_limit")
-    private Integer memoryLimit;
+    private Double memoryLimit;
 }

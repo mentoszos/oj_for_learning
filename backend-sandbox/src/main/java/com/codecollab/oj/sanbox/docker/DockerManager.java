@@ -19,6 +19,7 @@ public class DockerManager {
         String containerId = dockerClient.createContainerCmd(image).withHostConfig(new HostConfig().withMemory(64 * 1024 * 1024L)) //64MB
                 .withNetworkDisabled(true)
                 .withWorkingDir("/app")
+                .withCmd("tail", "-f", "/dev/null")
                 .exec().getId();
         return DockerContainer.builder()
                 .containerId(containerId)
@@ -28,6 +29,9 @@ public class DockerManager {
 
     public void stopContainer(String containerId){
         dockerClient.stopContainerCmd(containerId).exec();
+    }
+    public void startContainer(String containerId){
+        dockerClient.startContainerCmd(containerId).exec();
     }
 
 

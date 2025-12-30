@@ -24,7 +24,7 @@ public class QuestionUsecaseAddRequest implements Serializable {
     //时间，ms
     private Integer timeLimit;
     //内存,MB
-    private Integer memoryLimit;
+    private Double memoryLimit;
     //是否启用
     private Boolean active;
 }

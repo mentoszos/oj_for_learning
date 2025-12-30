@@ -11,6 +11,6 @@ public class ExecuteMessage {
     private String errMessage;
 
     private Integer time; // 单位ms
-    private Integer memory; // 单位MB
+    private Double memory; // 单位MB
     private Boolean Timeout;// 是否触发了 Java 侧的超时中断
 }

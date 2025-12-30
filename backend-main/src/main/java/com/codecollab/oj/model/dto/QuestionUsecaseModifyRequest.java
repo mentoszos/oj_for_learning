@@ -14,5 +14,5 @@ public class QuestionUsecaseModifyRequest implements Serializable {
     //时间，ms
     private Integer timeLimit;
     //内存,MB
-    private Integer memoryLimit;
+    private Double memoryLimit;
 }

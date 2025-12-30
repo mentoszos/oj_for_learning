@@ -22,7 +22,7 @@ public class QuestionAddRequest implements Serializable {
     /**
      * 内存限制，单位MB，默认256
      */
-    private Integer memoryLimit;
+    private Double memoryLimit;
 
     /**
      * 题目标题

@@ -13,10 +13,11 @@ import com.codecollab.oj.sanbox.model.ExecuteMessage;
 import com.codecollab.oj.sanbox.pool.ContainerPool;
 import com.codecollab.oj.sanbox.pool.DockerContainer;
 import jakarta.annotation.Resource;
+import org.springframework.stereotype.Component;
 
 import java.util.LinkedList;
 import java.util.List;
-
+@Component
 public class DockerCodeSandbox implements CodeSandbox {
     @Resource
     private ContainerPool containerPool;

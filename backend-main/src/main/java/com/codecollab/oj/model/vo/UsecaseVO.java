@@ -15,6 +15,6 @@ public class UsecaseVO implements Serializable {
     private String output;
     private Boolean active;
     private Integer timeLimit;
-    private Integer memoryLimit;
+    private Double memoryLimit;
 
 }

@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 public class CheckPoint {
     private Boolean accepted; //用例是否通过
 
-    private Integer memory; // 使用的内存，MB
+    private Double memory; // 使用的内存，MB
 
     private Integer time; // 耗时，ms
 
