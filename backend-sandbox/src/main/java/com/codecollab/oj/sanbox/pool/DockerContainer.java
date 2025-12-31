@@ -66,6 +66,11 @@ public class DockerContainer {
                 }
                 super.onNext(frame);
             }
+            @Override
+            public void onError(Throwable throwable){
+                //调用oncomplete,关掉Adapter
+                super.onComplete();
+            }
         };
 
 
@@ -96,51 +101,46 @@ public class DockerContainer {
             if(hasInput){
                 execStartCmd.withStdIn(inputStream);
             }
-            long startTime = getCpuTimeTOMilSeconds();
-            ResultCallback.Adapter<Frame> exec = execStartCmd.exec(frameAdapter);
-            if (inputStream!=null) inputStream.close();
-            //给网络阻塞等原因留点时间，传进来的timmeoutseconds还是cpu执行的时间，这里只是预留一下给他加0.5s
-            boolean completion = exec.awaitCompletion(timeoutMilSeconds + 500, TimeUnit.MILLISECONDS);
-            long endTime = getCpuTimeTOMilSeconds();
-            long cputimeUsed = endTime - startTime; //ms
-            if (Boolean.FALSE.equals(completion)) {//因为要跑所有测试用例，所以这里不把代码删了
+            long startCpuTime = getCpuTimeTOMilSeconds();
+            long startWallTime = System.currentTimeMillis();
+            long wallTimeLimit = timeoutMilSeconds*5;
+            execStartCmd.exec(frameAdapter).awaitCompletion(wallTimeLimit,TimeUnit.MILLISECONDS);//用awaitcompletion能第一时间知道程序执行完,要么报错，要么等10秒，测试结果是程序执行完成后都会报错，如果执行不完就是5倍时间。
+             //ms
+            long endWallTime = System.currentTimeMillis();
+            long WallTimeUsed = endWallTime-startWallTime;
+            //获取endwalltime必须在获取endcputime之前，不然会导致walltimeused从97ms增到2000ms左右，
+            long endCpuTime = getCpuTimeTOMilSeconds();
+            long cputimeUsed = endCpuTime - startCpuTime;
+            InspectExecResponse inspectExecResponse = dockerClient.inspectExecCmd(execId).exec();
+//
+//            do{
+//                Thread.sleep(1500);//1.5s
+//                inspectExecResponse = dockerClient.inspectExecCmd(execId).exec();
+//            }
+//            while(System.currentTimeMillis()-startWallTime<3000&&inspectExecResponse.isRunning());
+
+
+
+            if (inspectExecResponse.isRunning()) {//因为要跑所有测试用例，所以这里不把代码删了
                 this.stopProcesses();
             }
 
 
             //查看执行结果数据
-            InspectExecResponse inspectExecResponse = dockerClient.inspectExecCmd(execId).exec();
             Long exitCodeLong = inspectExecResponse.getExitCodeLong();
             Integer exitCode = (exitCodeLong == null) ? -1 : Math.toIntExact(exitCodeLong);
+            boolean timeout = cputimeUsed > timeoutMilSeconds || WallTimeUsed>wallTimeLimit;//墙上时间大于5倍cpu要求时间说明有问题，给他tle；
             ExecuteMessage executeMessage = ExecuteMessage.builder().errMessage(err.toString().trim())
                     .output(out.toString().trim())
                     .exitCode(exitCode == null ? -1L : exitCode)//超时、错误等导致他没有返回结果时，他会为null，但这个可以先判断completion来判断
-                    .Timeout(!completion)
+                    .Timeout(timeout)
                     .time((int) cputimeUsed)
                     .memory((maxMemory.get() / 1024.0 / 1024))
                     .build();
             return executeMessage;
         } catch (RuntimeException  e) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, e.getMessage());
-        } catch (IOException e) {
-            log.warn("关闭 测试用例inputstream 失败", e);
         } finally {
-            // 关闭 frameAdapter - 这是导致管道错误的主要原因
-            try {
-                if (frameAdapter != null) {
-                    frameAdapter.close();
-                }
-            } catch (IOException e) {
-                log.warn("关闭 frameAdapter 失败", e);
-            }
-            // 关闭 statisticsCallback
-            try {
-                if (statisticsCallback != null) {
-                    statisticsCallback.close();
-                }
-            } catch (IOException e) {
-                log.warn("关闭内存监控流失败", e);
-            }
             // 关闭输入流
             try {
                 if (inputStream != null) {
@@ -150,7 +150,6 @@ public class DockerContainer {
                 log.warn("关闭输入流失败", e);
             }
         }
-        return null;
     }
 
 

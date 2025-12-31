@@ -8,7 +8,7 @@ import com.codecollab.oj.model.dto.ExecuteCodeResponse;
 import com.codecollab.oj.model.entity.CheckPoint;
 import com.codecollab.oj.model.entity.JudgeInfo;
 import com.codecollab.oj.sanbox.CodeSandbox;
-import com.codecollab.oj.sanbox.enums.DockerExitCode;
+import com.codecollab.oj.sanbox.constant.DockerExitCodeConstants;
 import com.codecollab.oj.sanbox.model.ExecuteMessage;
 import com.codecollab.oj.sanbox.pool.ContainerPool;
 import com.codecollab.oj.sanbox.pool.DockerContainer;
@@ -32,7 +32,8 @@ public class DockerCodeSandbox implements CodeSandbox {
 
             //todo 启动javac，如果编译错误，返回CE
             ExecuteMessage emsg = container.compileCode();
-            if (DockerExitCode.CE_OR_RE.equals(DockerExitCode.getEnumByValue(emsg.getExitCode()))) {
+            //todo 这里编译失败了也只会返回exitcode=1；
+            if (emsg.getExitCode()!= DockerExitCodeConstants.SUCCESS) {
                 return ExecuteCodeResponse.builder().submitStatus(SubmitStatus.CE)
                         .errMsg(emsg.getErrMessage())
                         .build();
@@ -67,7 +68,7 @@ public class DockerCodeSandbox implements CodeSandbox {
                 Long exitCode = executeMessage.getExitCode();
                 if (executeMessage.getTimeout() || executeMessage.getTime().intValue() > timeLimit)
                     checkPoint.setSubmitStatus(SubmitStatus.TLE);
-                else if (DockerExitCode.getEnumByValue(exitCode).equals(DockerExitCode.MLE))
+                else if (exitCode == DockerExitCodeConstants.MLE)
                     checkPoint.setSubmitStatus(SubmitStatus.MLE);
                 else if (StrUtil.isNotEmpty(executeMessage.getErrMessage()))
                     checkPoint.setSubmitStatus(SubmitStatus.RE);
