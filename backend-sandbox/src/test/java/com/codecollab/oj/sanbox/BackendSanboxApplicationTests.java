@@ -44,7 +44,7 @@ class BackendSanboxApplicationTests {
         ArrayList<Long>timelimit = new ArrayList<>();
         ArrayList<Double>memorylimit = new ArrayList<>();
         input.add("4 2\n");
-        output.add("6");、、
+        output.add("6");
         timelimit.add(1000L);
         memorylimit.add(256.0);
         executeCodeRequest.setInputs(input);
