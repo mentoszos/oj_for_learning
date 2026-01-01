@@ -29,7 +29,7 @@ class BackendSanboxApplicationTests {
                 "    public static void main(String[] args){\n" +
                 "        Scanner in = new Scanner(System.in);\n" +
                 "\n" +
-                "        int a = in.nextInt();\n" +
+                "        int a = 1/0;\n" +
                 "        int b = in.nextInt();\n" +
                 "        \n" +
                 "        System.out.println(a + b);\n" +
@@ -42,12 +42,15 @@ class BackendSanboxApplicationTests {
         ArrayList<String>input = new ArrayList<>();
         ArrayList<String>output = new ArrayList<>();
         ArrayList<Long>timelimit = new ArrayList<>();
+        ArrayList<Double>memorylimit = new ArrayList<>();
         input.add("4 2\n");
         output.add("6");
         timelimit.add(1000L);
+        memorylimit.add(256.0);
         executeCodeRequest.setInputs(input);
         executeCodeRequest.setOutputs(output);
         executeCodeRequest.setTimeLimits(timelimit);
+        executeCodeRequest.setMemoryLimits(memorylimit);
         ExecuteCodeResponse executeCodeResponse = codeSandbox.executeCode(executeCodeRequest);
         System.out.println(executeCodeResponse);
     }

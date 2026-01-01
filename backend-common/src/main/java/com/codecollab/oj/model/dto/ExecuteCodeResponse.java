@@ -20,7 +20,7 @@ public class ExecuteCodeResponse implements Serializable {
     private List<String> outputs;
 
     private SubmitStatus submitStatus;
-    private String errMsg;
+    private String errMsg; // 这个在执行一次代码的时候可以用来返回错误数据比如RE和CE
 
 
 

@@ -45,9 +45,40 @@ public class DockerContainer {
 
     public ExecuteMessage executeCode(String input, long timeoutMilSeconds, double memoryLimit) throws InterruptedException {
 //        String[] cmd = {"java", "-cp", "/app", "Main"};
-        int xmxVal = (int) memoryLimit;
-        String runCmd = String.format("/usr/bin/time -v -o /app/report.txt java -Xmx%dm -cp /app Main", xmxVal);
+        if (memoryLimit<128) memoryLimit = 128;
+        int memoryMB = (int) memoryLimit;
+        int heapMB = (int) (memoryMB * 0.70);
+        int metaspaceMB = (int) (memoryMB * 0.12);
+        int directMB = (int) (memoryMB * 0.06);
+        int stackTotalMB = 16;   // 固定预留
+        int nativeMB = 32;       // JVM / libc / JIT buffer
+        int sum = heapMB + metaspaceMB + directMB + stackTotalMB + nativeMB;
+        if (sum > memoryMB) {
+            heapMB -= (sum - memoryMB);
+        }
+        if (heapMB < 128) {
+            throw new IllegalStateException("Heap too small after adjustment");
+        }
+
+        // ===== 2. 构造 Java 执行命令 =====
+        String runCmd = String.format(
+                "/usr/bin/time -v -o /app/report.txt " +
+                        "java " +
+                        "-Xms%dm " +
+                        "-Xmx%dm " +
+                        "-Xss512k " +
+                        "-XX:MaxMetaspaceSize=%dm " +
+                        "-XX:MaxDirectMemorySize=%dm " +
+                        "-XX:+UseSerialGC " +
+                        "-XX:+ExitOnOutOfMemoryError " +
+                        "-cp /app Main",
+                heapMB,
+                heapMB,
+                metaspaceMB,
+                directMB
+        );
         String[] cmd = {"sh", "-c", runCmd};
+
         boolean hasInput = false;
         if (StrUtil.isNotEmpty(input)) hasInput = true;
         ExecCreateCmdResponse execResponse = dockerClient.execCreateCmd(containerId).withCmd(cmd)
@@ -143,13 +174,14 @@ public class DockerContainer {
 
             //查看执行结果数据
             Long exitCodeLong = inspectExecResponse.getExitCodeLong();
-            Integer exitCode = (exitCodeLong == null) ? -1 : Math.toIntExact(exitCodeLong);
-            boolean timeout = cputimeUsed > timeoutMilSeconds || WallTimeUsed>wallTimeLimit;//墙上时间大于5倍cpu要求时间说明有问题，给他tle；
+            exitCodeLong = (exitCodeLong == null) ? -1L : Math.toIntExact(exitCodeLong);
+            boolean timeout = WallTimeUsed>wallTimeLimit;//墙上时间大于5倍cpu要求时间说明有问题，给他tle；
 
-            ExecuteMessage executeMessage = ExecuteMessage.builder().errMessage(err.toString().trim())
+            ExecuteMessage executeMessage = ExecuteMessage.builder()
+                    .errMessage(err.toString().trim())
                     .output(out.toString().trim())
-                    .exitCode(exitCode == null ? -1L : exitCode)
-                    .Timeout(timeout)
+                    .exitCode(exitCodeLong)
+                    .wallTimeout(timeout)
                     .time((int) cputimeUsed)
 //                    .memory((maxMemory.get() / 1024.0 / 1024))
                     .memory(maxMemoryMBytes)

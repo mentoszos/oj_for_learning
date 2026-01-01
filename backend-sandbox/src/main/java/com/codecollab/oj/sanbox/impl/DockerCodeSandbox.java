@@ -1,7 +1,6 @@
 package com.codecollab.oj.sanbox.impl;
 
 import cn.hutool.core.util.StrUtil;
-import com.codecollab.oj.common.enums.SubmitLanguageType;
 import com.codecollab.oj.common.enums.SubmitStatus;
 import com.codecollab.oj.model.dto.ExecuteCodeRequest;
 import com.codecollab.oj.model.dto.ExecuteCodeResponse;
@@ -58,29 +57,31 @@ public class DockerCodeSandbox implements CodeSandbox {
 
                 total += 1;
                 ExecuteMessage executeMessage = container.executeCode(input, timeLimit,memoryLimit);
+                double memory = executeMessage.getMemory();
+                int time = executeMessage.getTime();
+                String errmsg = executeMessage.getErrMessage();
+                Boolean wallTimeout = executeMessage.getWallTimeout();
                 CheckPoint checkPoint = CheckPoint.builder()
-                        .accepted(SubmitStatus.ACCEPTED.getValue().intValue() == executeMessage.getExitCode().longValue())
-                        .memory(executeMessage.getMemory())
-                        .time(executeMessage.getTime())
+                        .memory(memory)
+                        .time(time)
                         .build();
                 checkPointList.add(checkPoint);
                 outputs.add(executeMessage.getOutput());
 
                 //判断该checkpoint过没
+                checkPoint.setAccepted(false);
                 Long exitCode = executeMessage.getExitCode();
-                if (executeMessage.getTimeout() || executeMessage.getTime().intValue() > timeLimit)
+                if (wallTimeout || time > timeLimit)
                     checkPoint.setSubmitStatus(SubmitStatus.TLE);
                 else if (exitCode == DockerExitCodeConstants.MLE)
                     checkPoint.setSubmitStatus(SubmitStatus.MLE);
-                else if (StrUtil.isNotEmpty(executeMessage.getErrMessage()))
+                else if (StrUtil.isNotEmpty(errmsg))
                     checkPoint.setSubmitStatus(SubmitStatus.RE);
                 else if (compareOutput(executeMessage.getOutput(), ans)) {
                     checkPoint.setSubmitStatus(SubmitStatus.ACCEPTED);
                     checkPoint.setAccepted(true);
                     totalPass += 1;
                 } else checkPoint.setSubmitStatus(SubmitStatus.WA);
-
-
             }
             // 1. 寻找第一个非 ACCEPTED 的状态作为全局状态
             SubmitStatus finalStatus = SubmitStatus.ACCEPTED;
@@ -95,8 +96,10 @@ public class DockerCodeSandbox implements CodeSandbox {
             judgeInfo.setCheckPoints(checkPointList);
             judgeInfo.setTotal(total);
             judgeInfo.setTotalPass(totalPass);
-            ExecuteCodeResponse response = ExecuteCodeResponse.builder().outputs(outputs).judgeInfo(judgeInfo)
-                    .submitStatus(finalStatus)
+            ExecuteCodeResponse response = ExecuteCodeResponse.builder()
+                    .outputs(outputs)
+                    .judgeInfo(judgeInfo)
+                    .submitStatus(finalStatus.getValue() != SubmitStatus.ACCEPTED.getValue()?SubmitStatus.WA:SubmitStatus.ACCEPTED)//大层的判题只有过和不过
                     .build();
 
 
