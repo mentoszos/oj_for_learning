@@ -5,7 +5,7 @@ import com.codecollab.oj.model.dto.ExecuteCodeResponse;
 
 
 public interface CodeSandbox {
-    public ExecuteCodeResponse executeCode(ExecuteCodeRequest executeCodeRequest) throws InterruptedException;
+    public ExecuteCodeResponse executeCode(ExecuteCodeRequest executeCodeRequest);
 
 }
 

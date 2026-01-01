@@ -1,7 +1,9 @@
 package com.codecollab.oj.sanbox.impl;
 
 import cn.hutool.core.util.StrUtil;
+import com.codecollab.oj.common.enums.ErrorCode;
 import com.codecollab.oj.common.enums.SubmitStatus;
+import com.codecollab.oj.exception.BusinessException;
 import com.codecollab.oj.model.dto.ExecuteCodeRequest;
 import com.codecollab.oj.model.dto.ExecuteCodeResponse;
 import com.codecollab.oj.model.entity.CheckPoint;
@@ -16,15 +18,16 @@ import org.springframework.stereotype.Component;
 
 import java.util.LinkedList;
 import java.util.List;
+
 @Component
 public class DockerCodeSandbox implements CodeSandbox {
     @Resource
     private ContainerPool containerPool;
 
     @Override
-    public ExecuteCodeResponse executeCode(ExecuteCodeRequest executeCodeRequest) throws InterruptedException {
+    public ExecuteCodeResponse executeCode(ExecuteCodeRequest executeCodeRequest)  {
         DockerContainer container = containerPool.borrowContainer();
-        try{
+        try {
             //todo 从request里找到代码，把代码拷贝到容器
             String codeText = executeCodeRequest.getCode();
             container.copyCodeToContainer(codeText);
@@ -32,7 +35,7 @@ public class DockerCodeSandbox implements CodeSandbox {
             //todo 启动javac，如果编译错误，返回CE
             ExecuteMessage emsg = container.compileCode();
             //todo 这里编译失败了也只会返回exitcode=1；
-            if (emsg.getExitCode()!= DockerExitCodeConstants.SUCCESS) {
+            if (emsg.getExitCode() != DockerExitCodeConstants.SUCCESS) {
                 return ExecuteCodeResponse.builder().submitStatus(SubmitStatus.CE)
                         .errMsg(emsg.getErrMessage())
                         .build();
@@ -49,6 +52,7 @@ public class DockerCodeSandbox implements CodeSandbox {
             List<String> outputs = new LinkedList<>();
             List<CheckPoint> checkPointList = new LinkedList<>();
             int total = 0, totalPass = 0;
+            String errmsg = null;
             for (int i = 0; i < inputs.size(); i++) {
                 String input = inputs.get(i);
                 Long timeLimit = timeLimits.get(i);
@@ -56,10 +60,10 @@ public class DockerCodeSandbox implements CodeSandbox {
                 double memoryLimit = memoryLimits.get(i);
 
                 total += 1;
-                ExecuteMessage executeMessage = container.executeCode(input, timeLimit,memoryLimit);
+                ExecuteMessage executeMessage = container.executeCode(input, timeLimit, memoryLimit);
                 double memory = executeMessage.getMemory();
                 int time = executeMessage.getTime();
-                String errmsg = executeMessage.getErrMessage();
+                if(errmsg ==null && StrUtil.isNotBlank(executeMessage.getErrMessage())) errmsg = executeMessage.getErrMessage();
                 Boolean wallTimeout = executeMessage.getWallTimeout();
                 CheckPoint checkPoint = CheckPoint.builder()
                         .memory(memory)
@@ -99,19 +103,22 @@ public class DockerCodeSandbox implements CodeSandbox {
             ExecuteCodeResponse response = ExecuteCodeResponse.builder()
                     .outputs(outputs)
                     .judgeInfo(judgeInfo)
-                    .submitStatus(finalStatus.getValue() != SubmitStatus.ACCEPTED.getValue()?SubmitStatus.WA:SubmitStatus.ACCEPTED)//大层的判题只有过和不过
+                    .submitStatus(finalStatus.getValue() != SubmitStatus.ACCEPTED.getValue() ? SubmitStatus.WA : SubmitStatus.ACCEPTED)//大层的判题只有过和不过
+                    .errMsg(errmsg)
                     .build();
 
 
             return response;
-        }
-
-        finally {//todo 清理容器并归还容器
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        } finally {//todo 清理容器并归还容器
             //默认工作区为  /app
             container.deleteCode("");
             containerPool.returnContainer(container);
         }
     }
+
+
 
     private boolean compareOutput(String actual, String expected) {
         if (actual == null || expected == null) return false;

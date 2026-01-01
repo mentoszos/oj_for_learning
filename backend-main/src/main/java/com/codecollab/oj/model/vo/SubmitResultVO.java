@@ -3,7 +3,9 @@ package com.codecollab.oj.model.vo;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.codecollab.oj.common.enums.SubmitStatus;
 import com.codecollab.oj.model.entity.JudgeInfo;
+import lombok.Builder;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -13,6 +15,7 @@ import java.time.LocalDateTime;
  * 提交结果视图对象
  */
 @Data
+@Builder
 public class SubmitResultVO implements Serializable {
     private static final long serialVersionUID = 1L;
 
@@ -40,5 +43,9 @@ public class SubmitResultVO implements Serializable {
     private String sumbitCode;
 
     private String codeLanguage;
+
+    private SubmitStatus submitStatus;
+    private String errMsg; // 这个在执行一次代码的时候可以用来返回错误数据比如RE和CE
+
 }
 

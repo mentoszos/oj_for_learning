@@ -2,6 +2,7 @@ package com.codecollab.oj.common.enums;
 
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
+import com.baomidou.mybatisplus.annotation.EnumValue;
 import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.Getter;
 
@@ -19,7 +20,9 @@ public enum SubmitLanguageType {
     JAVASCRIPT("JavaScript", "javascript");
 
     private final String text;
+
     @JsonValue
+    @EnumValue
     private final String value;
 
     SubmitLanguageType(String text, String value) {

@@ -6,6 +6,8 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
+import com.codecollab.oj.common.enums.SubmitLanguageType;
+import lombok.Builder;
 import lombok.Data;
 
 /**
@@ -68,5 +70,5 @@ public class QuestionSubmit implements Serializable {
      * 代码类型，c、java
      */
     @TableField(value = "code_language")
-    private String codeLanguage;
+    private SubmitLanguageType codeLanguage;
 }

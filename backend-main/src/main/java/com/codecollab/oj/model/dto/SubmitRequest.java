@@ -1,5 +1,6 @@
 package com.codecollab.oj.model.dto;
 
+import com.codecollab.oj.common.enums.SubmitLanguageType;
 import lombok.Data;
 import org.intellij.lang.annotations.Language;
 
@@ -11,9 +12,9 @@ import java.io.Serializable;
 @Data
 public class SubmitRequest implements Serializable {
     private static final long serialVersionUID = 1L;
-    private String questionId;
+    private Integer questionId;
     private String code;
-    private String language;
+    private SubmitLanguageType submitLanguageType;
 
     //{questionId: 12,…}
     //code

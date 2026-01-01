@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class CodeSandboxFactory {
+    public static final String DOCKER_TYPE = "docker";
     //todo 这个在懒加载中需要有线程安全的操作
     public static CodeSandbox newInstance(String type){
         switch (type){

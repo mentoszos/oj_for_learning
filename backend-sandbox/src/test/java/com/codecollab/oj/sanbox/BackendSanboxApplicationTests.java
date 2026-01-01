@@ -4,14 +4,11 @@ import com.codecollab.oj.common.enums.SubmitLanguageType;
 import com.codecollab.oj.common.enums.SubmitStatus;
 import com.codecollab.oj.model.dto.ExecuteCodeRequest;
 import com.codecollab.oj.model.dto.ExecuteCodeResponse;
-import com.codecollab.oj.sanbox.impl.DockerCodeSandbox;
-import com.codecollab.oj.sanbox.pool.ContainerPool;
-import com.github.dockerjava.api.DockerClient;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import java.io.InputStream;
+
 import java.util.ArrayList;
 
 
@@ -29,12 +26,12 @@ class BackendSanboxApplicationTests {
                 "    public static void main(String[] args){\n" +
                 "        Scanner in = new Scanner(System.in);\n" +
                 "\n" +
-                "        int a = 1/0;\n" +
+                "        int a = in.nextInt();\n" +
                 "        int b = in.nextInt();\n" +
                 "        \n" +
                 "        System.out.println(a + b);\n" +
                 "\n" +
-                "        in.close();\n" +
+
                 "    }\n" +
                 "}\n");
 

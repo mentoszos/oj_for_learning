@@ -45,7 +45,6 @@ spring:
       simple:
         acknowledge-mode: manual
         prefetch: 1
-
 # MyBatis Plus配置
 mybatis-plus:
   configuration:
