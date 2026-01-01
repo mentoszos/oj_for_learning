@@ -45,6 +45,7 @@ public class DockerCodeSandbox implements CodeSandbox {
             List<String> inputs = executeCodeRequest.getInputs();
             List<Long> timeLimits = executeCodeRequest.getTimeLimits();
             List<String> answers = executeCodeRequest.getOutputs();
+            List<Double> memoryLimits = executeCodeRequest.getMemoryLimits();
 
             List<String> outputs = new LinkedList<>();
             List<CheckPoint> checkPointList = new LinkedList<>();
@@ -53,9 +54,10 @@ public class DockerCodeSandbox implements CodeSandbox {
                 String input = inputs.get(i);
                 Long timeLimit = timeLimits.get(i);
                 String ans = answers.get(i);
+                double memoryLimit = memoryLimits.get(i);
 
                 total += 1;
-                ExecuteMessage executeMessage = container.executeCode(input, timeLimit);
+                ExecuteMessage executeMessage = container.executeCode(input, timeLimit,memoryLimit);
                 CheckPoint checkPoint = CheckPoint.builder()
                         .accepted(SubmitStatus.ACCEPTED.getValue().intValue() == executeMessage.getExitCode().longValue())
                         .memory(executeMessage.getMemory())

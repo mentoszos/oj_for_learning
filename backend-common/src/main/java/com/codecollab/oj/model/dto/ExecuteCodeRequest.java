@@ -18,5 +18,6 @@ public class ExecuteCodeRequest implements Serializable {
     private ArrayList<String> inputs;
     private ArrayList<String> outputs;
     private ArrayList<Long> timeLimits; //ms
+    private ArrayList<Double> memoryLimits; //MB
 
 }

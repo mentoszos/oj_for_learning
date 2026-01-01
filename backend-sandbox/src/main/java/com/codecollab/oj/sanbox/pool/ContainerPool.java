@@ -22,7 +22,8 @@ public class ContainerPool {
 
     public void initPool(int num){
         for (int i =0;i<num; i++){
-            DockerContainer container = dockerManager.createContainer("bellsoft/liberica-openjdk-alpine:8");
+//            DockerContainer container = dockerManager.createContainer("bellsoft/liberica-openjdk-alpine:8");
+            DockerContainer container = dockerManager.createContainer("oj-java:1.0");//内存监控需要这个
             containers.offer(container);
             dockerManager.startContainer(container.getContainerId());
         }

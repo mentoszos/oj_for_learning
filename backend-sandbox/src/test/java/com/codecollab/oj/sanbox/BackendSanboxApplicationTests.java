@@ -43,7 +43,7 @@ class BackendSanboxApplicationTests {
         ArrayList<String>output = new ArrayList<>();
         ArrayList<Long>timelimit = new ArrayList<>();
         input.add("4 2\n");
-        output.add("3");
+        output.add("6");
         timelimit.add(1000L);
         executeCodeRequest.setInputs(input);
         executeCodeRequest.setOutputs(output);

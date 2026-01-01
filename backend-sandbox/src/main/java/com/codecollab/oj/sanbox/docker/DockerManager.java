@@ -16,10 +16,10 @@ public class DockerManager {
     private DockerClient dockerClient;
 
     public DockerContainer createContainer(String image){
-        String containerId = dockerClient.createContainerCmd(image).withHostConfig(new HostConfig().withMemory(64 * 1024 * 1024L)) //64MB
+        String containerId = dockerClient.createContainerCmd(image).withHostConfig(new HostConfig().withMemory(256 * 1024 * 1024L)) //64MB
                 .withNetworkDisabled(true)
                 .withWorkingDir("/app")
-                .withCmd("tail", "-f", "/dev/null")
+                .withCmd("tail", "-f", "/dev/null") //给他一个命令，不然他启动了直接停止
                 .exec().getId();
         return DockerContainer.builder()
                 .containerId(containerId)
