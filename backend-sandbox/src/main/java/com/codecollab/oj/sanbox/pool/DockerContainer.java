@@ -3,7 +3,7 @@ package com.codecollab.oj.sanbox.pool;
 import cn.hutool.core.util.StrUtil;
 import com.codecollab.oj.common.enums.ErrorCode;
 import com.codecollab.oj.exception.BusinessException;
-import com.codecollab.oj.sanbox.model.ExecuteMessage;
+import com.codecollab.oj.model.entity.ExecuteMessage;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.ExecCreateCmdResponse;

@@ -1,4 +1,4 @@
-package com.codecollab.oj.sanbox.model;
+package com.codecollab.oj.model.entity;
 
 import lombok.Builder;
 import lombok.Data;

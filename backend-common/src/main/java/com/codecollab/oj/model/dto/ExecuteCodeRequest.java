@@ -16,7 +16,7 @@ public class ExecuteCodeRequest implements Serializable {
     private String code;
     private SubmitLanguageType languageType;
     private ArrayList<String> inputs;
-    private ArrayList<String> outputs;
+//    private ArrayList<String> outputs; //答案？
     private ArrayList<Long> timeLimits; //ms
     private ArrayList<Double> memoryLimits; //MB
 

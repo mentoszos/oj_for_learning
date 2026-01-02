@@ -1,16 +1,11 @@
 package com.codecollab.oj.sanbox.impl;
 
-import cn.hutool.core.util.StrUtil;
-import com.codecollab.oj.common.enums.ErrorCode;
 import com.codecollab.oj.common.enums.SubmitStatus;
-import com.codecollab.oj.exception.BusinessException;
 import com.codecollab.oj.model.dto.ExecuteCodeRequest;
 import com.codecollab.oj.model.dto.ExecuteCodeResponse;
-import com.codecollab.oj.model.entity.CheckPoint;
-import com.codecollab.oj.model.entity.JudgeInfo;
 import com.codecollab.oj.sanbox.CodeSandbox;
 import com.codecollab.oj.sanbox.constant.DockerExitCodeConstants;
-import com.codecollab.oj.sanbox.model.ExecuteMessage;
+import com.codecollab.oj.model.entity.ExecuteMessage;
 import com.codecollab.oj.sanbox.pool.ContainerPool;
 import com.codecollab.oj.sanbox.pool.DockerContainer;
 import jakarta.annotation.Resource;
@@ -33,7 +28,8 @@ public class DockerCodeSandbox implements CodeSandbox {
             container.copyCodeToContainer(codeText);
 
             //todo 启动javac，如果编译错误，返回CE
-            ExecuteMessage emsg = container.compileCode();
+//            ExecuteMessage emsg = container.compileCode();
+            ExecuteMessage emsg = this.compileCode(container);
             //todo 这里编译失败了也只会返回exitcode=1；
             if (emsg.getExitCode() != DockerExitCodeConstants.SUCCESS) {
                 return ExecuteCodeResponse.builder().submitStatus(SubmitStatus.CE)
@@ -46,69 +42,76 @@ public class DockerCodeSandbox implements CodeSandbox {
             //判题
             List<String> inputs = executeCodeRequest.getInputs();
             List<Long> timeLimits = executeCodeRequest.getTimeLimits();
-            List<String> answers = executeCodeRequest.getOutputs();
+//            List<String> answers = executeCodeRequest.getOutputs();
             List<Double> memoryLimits = executeCodeRequest.getMemoryLimits();
 
-            List<String> outputs = new LinkedList<>();
-            List<CheckPoint> checkPointList = new LinkedList<>();
-            int total = 0, totalPass = 0;
+
             String errmsg = null;
+            SubmitStatus status = null;
+            List<ExecuteMessage> executeMessages = new LinkedList<>();
+//            int total = 0, totalPass = 0;
+            ExecuteCodeResponse executeCodeResponse = ExecuteCodeResponse.builder()
+                    .executeMessages(executeMessages)
+                    .errMsg(errmsg)
+                    .submitStatus(SubmitStatus.ACCEPTED)
+                    .build();
+
             for (int i = 0; i < inputs.size(); i++) {
                 String input = inputs.get(i);
                 Long timeLimit = timeLimits.get(i);
-                String ans = answers.get(i);
+//                String ans = answers.get(i);
                 double memoryLimit = memoryLimits.get(i);
-
-                total += 1;
+//                total += 1;
                 ExecuteMessage executeMessage = container.executeCode(input, timeLimit, memoryLimit);
-                double memory = executeMessage.getMemory();
-                int time = executeMessage.getTime();
-                if(errmsg ==null && StrUtil.isNotBlank(executeMessage.getErrMessage())) errmsg = executeMessage.getErrMessage();
-                Boolean wallTimeout = executeMessage.getWallTimeout();
-                CheckPoint checkPoint = CheckPoint.builder()
-                        .memory(memory)
-                        .time(time)
-                        .build();
-                checkPointList.add(checkPoint);
-                outputs.add(executeMessage.getOutput());
+                executeMessages.add(executeMessage);
+//                double memory = executeMessage.getMemory();
+//                int time = executeMessage.getTime();
+//                if(errmsg ==null && StrUtil.isNotBlank(executeMessage.getErrMessage())) errmsg = executeMessage.getErrMessage();
+//                Boolean wallTimeout = executeMessage.getWallTimeout();
+//                CheckPoint checkPoint = CheckPoint.builder()
+//                        .memory(memory)
+//                        .time(time)
+//                        .build();
+//                checkPointList.add(checkPoint);
+//                outputs.add(executeMessage.getOutput());
 
-                //判断该checkpoint过没
-                checkPoint.setAccepted(false);
-                Long exitCode = executeMessage.getExitCode();
-                if (wallTimeout || time > timeLimit)
-                    checkPoint.setSubmitStatus(SubmitStatus.TLE);
-                else if (exitCode == DockerExitCodeConstants.MLE)
-                    checkPoint.setSubmitStatus(SubmitStatus.MLE);
-                else if (StrUtil.isNotEmpty(errmsg))
-                    checkPoint.setSubmitStatus(SubmitStatus.RE);
-                else if (compareOutput(executeMessage.getOutput(), ans)) {
-                    checkPoint.setSubmitStatus(SubmitStatus.ACCEPTED);
-                    checkPoint.setAccepted(true);
-                    totalPass += 1;
-                } else checkPoint.setSubmitStatus(SubmitStatus.WA);
+//                //判断该checkpoint过没
+//                checkPoint.setAccepted(false);
+//                Long exitCode = executeMessage.getExitCode();
+//                if (wallTimeout || time > timeLimit)
+//                    checkPoint.setSubmitStatus(SubmitStatus.TLE);
+//                else if (exitCode == DockerExitCodeConstants.MLE)
+//                    checkPoint.setSubmitStatus(SubmitStatus.MLE);
+//                else if (StrUtil.isNotEmpty(errmsg))
+//                    checkPoint.setSubmitStatus(SubmitStatus.RE);
+//                else if (compareOutput(executeMessage.getOutput(), ans)) {
+//                    checkPoint.setSubmitStatus(SubmitStatus.ACCEPTED);
+//                    checkPoint.setAccepted(true);
+//                    totalPass += 1;
+//                }
+//                else checkPoint.setSubmitStatus(SubmitStatus.WA);
             }
-            // 1. 寻找第一个非 ACCEPTED 的状态作为全局状态
-            SubmitStatus finalStatus = SubmitStatus.ACCEPTED;
-            for (CheckPoint cp : checkPointList) {
-                if (cp.getSubmitStatus() != SubmitStatus.ACCEPTED) {
-                    finalStatus = cp.getSubmitStatus(); // 捕获第一个错误（如 TLE, MLE, RE）
-                    break;
-                }
-            }
+            return executeCodeResponse;
+//            // 1. 寻找第一个非 ACCEPTED 的状态作为全局状态
+//            SubmitStatus finalStatus = SubmitStatus.ACCEPTED;
+//            for (CheckPoint cp : checkPointList) {
+//                if (cp.getSubmitStatus() != SubmitStatus.ACCEPTED) {
+//                    finalStatus = cp.getSubmitStatus(); // 捕获第一个错误（如 TLE, MLE, RE）
+//                    break;
+//                }
+//            }
             //todo 将结果封装到response中
-            JudgeInfo judgeInfo = new JudgeInfo();
-            judgeInfo.setCheckPoints(checkPointList);
-            judgeInfo.setTotal(total);
-            judgeInfo.setTotalPass(totalPass);
-            ExecuteCodeResponse response = ExecuteCodeResponse.builder()
-                    .outputs(outputs)
-                    .judgeInfo(judgeInfo)
-                    .submitStatus(finalStatus.getValue() != SubmitStatus.ACCEPTED.getValue() ? SubmitStatus.WA : SubmitStatus.ACCEPTED)//大层的判题只有过和不过
-                    .errMsg(errmsg)
-                    .build();
+//            JudgeInfo judgeInfo = new JudgeInfo();
+//            judgeInfo.setCheckPoints(checkPointList);
+//            judgeInfo.setTotal(total);
+//            judgeInfo.setTotalPass(totalPass);
+//            ExecuteCodeResponse response = ExecuteCodeResponse.builder()
+//                    .outputs(outputs)
+//                    .judgeInfo(judgeInfo)
+//                    .submitStatus(finalStatus.getValue() != SubmitStatus.ACCEPTED.getValue() ? SubmitStatus.WA : SubmitStatus.ACCEPTED)//大层的判题只有过和不过
+//                    .errMsg(errmsg)
+//                    .build();
 
-
-            return response;
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         } finally {//todo 清理容器并归还容器
@@ -120,12 +123,16 @@ public class DockerCodeSandbox implements CodeSandbox {
 
 
 
-    private boolean compareOutput(String actual, String expected) {
-        if (actual == null || expected == null) return false;
-        // 1. 去掉首尾空白字符
-        // 2. 将 \r\n 统一替换为 \n
-        String a = actual.trim().replace("\r\n", "\n");
-        String e = expected.trim().replace("\r\n", "\n");
-        return a.equals(e);
+//    private boolean compareOutput(String actual, String expected) {
+//        if (actual == null || expected == null) return false;
+//        // 1. 去掉首尾空白字符
+//        // 2. 将 \r\n 统一替换为 \n
+//        String a = actual.trim().replace("\r\n", "\n");
+//        String e = expected.trim().replace("\r\n", "\n");
+//        return a.equals(e);
+//    }
+    private ExecuteMessage compileCode(DockerContainer container){
+        return container.compileCode();
     }
+
 }

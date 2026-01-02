@@ -45,7 +45,7 @@ class BackendSanboxApplicationTests {
         timelimit.add(1000L);
         memorylimit.add(256.0);
         executeCodeRequest.setInputs(input);
-        executeCodeRequest.setOutputs(output);
+
         executeCodeRequest.setTimeLimits(timelimit);
         executeCodeRequest.setMemoryLimits(memorylimit);
         ExecuteCodeResponse executeCodeResponse = codeSandbox.executeCode(executeCodeRequest);
