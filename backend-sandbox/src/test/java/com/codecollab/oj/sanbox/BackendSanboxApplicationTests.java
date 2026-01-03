@@ -20,20 +20,7 @@ class BackendSanboxApplicationTests {
     void contextLoads() throws InterruptedException {
 
         ExecuteCodeRequest executeCodeRequest = new ExecuteCodeRequest();
-        executeCodeRequest.setCode("import java.util.Scanner;\n" +
-                "\n" +
-                "public class Main {\n" +
-                "    public static void main(String[] args){\n" +
-                "        Scanner in = new Scanner(System.in);\n" +
-                "\n" +
-                "        int a = in.nextInt();\n" +
-                "        int b = in.nextInt();\n" +
-                "        \n" +
-                "        System.out.println(a + b);\n" +
-                "\n" +
-
-                "    }\n" +
-                "}\n");
+        executeCodeRequest.setCode("import java.util.Scanner;\nimport java.io.FileWriter;\nimport java.io.IOException;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner in = new Scanner(System.in);\n        int a = 0;\n        int b = 0;\n\n        // 尝试读取输入，如果读不到则保持默认值 0\n        if (in.hasNextInt()) {\n            a = in.nextInt();\n        }\n        if (in.hasNextInt()) {\n            b = in.nextInt();\n        }\n\n        // 标准输出打印结果\n        System.out.println(a + b);\n\n        // --- 调试核心：将结果写入文件 ---\n        try (FileWriter writer = new FileWriter(\"debug.txt\")) {\n            writer.write(\"Received a: \" + a + \"\\n\");\n            writer.write(\"Received b: \" + b + \"\\n\");\n            writer.flush();\n        } catch (IOException e) {\n            // 如果写入文件失败，打印到标准错误流\n            System.err.println(\"File write failed: \" + e.getMessage());\n        }\n    }\n}");
 
         executeCodeRequest.setLanguageType(SubmitLanguageType.JAVA);
         ArrayList<String>input = new ArrayList<>();

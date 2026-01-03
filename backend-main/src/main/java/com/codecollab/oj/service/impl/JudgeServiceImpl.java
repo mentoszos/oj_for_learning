@@ -2,7 +2,9 @@ package com.codecollab.oj.service.impl;
 
 import cn.hutool.core.util.BooleanUtil;
 import cn.hutool.core.util.StrUtil;
+import cn.hutool.json.JSONUtil;
 import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.codecollab.oj.common.enums.SubmitLanguageType;
 import com.codecollab.oj.common.enums.SubmitStatus;
@@ -16,15 +18,26 @@ import com.codecollab.oj.model.dto.SubmitRequest;
 import com.codecollab.oj.model.entity.*;
 import com.codecollab.oj.model.vo.SubmitResultVO;
 import com.codecollab.oj.sanbox.CodeSandbox;
-import com.codecollab.oj.sanbox.Factory.CodeSandboxFactory;
 import com.codecollab.oj.sanbox.constant.DockerExitCodeConstants;
 import com.codecollab.oj.service.JudgeService;
 import com.codecollab.oj.service.QuestionUsecaseService;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
+import org.apache.hc.core5.http.ClassicHttpRequest;
+import org.apache.hc.core5.http.ContentType;
+import org.apache.hc.core5.http.HttpEntity;
+import org.apache.hc.core5.http.ParseException;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
+import org.apache.hc.core5.http.io.support.ClassicRequestBuilder;
+import org.apache.http.client.HttpClient;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 /**
@@ -43,13 +56,10 @@ public class JudgeServiceImpl implements JudgeService {
     @Autowired
     private RabbitTemplate rabbitTemplate;
 
+    @Autowired
     private CodeSandbox codeSandbox;
 
     private static final String JUDGE_QUEUE = "code_judge_queue";
-
-    public JudgeServiceImpl() {
-        codeSandbox = CodeSandboxFactory.newInstance(CodeSandboxFactory.DOCKER_TYPE);
-    }
 
     @Override
     public QuestionSubmit getSubmitResult(Long submitId) {
@@ -99,7 +109,25 @@ public class JudgeServiceImpl implements JudgeService {
         executeCodeRequest.setMemoryLimits(memoryLimits);
         executeCodeRequest.setTimeLimits(timeLimits);
 
-        ExecuteCodeResponse executeCodeResponse = codeSandbox.executeCode(executeCodeRequest);
+//        ExecuteCodeResponse executeCodeResponse = codeSandbox.executeCode(executeCodeRequest);
+        String jsonString = JSONObject.toJSONString(executeCodeRequest);
+        CloseableHttpClient http = HttpClientBuilder.create().build();
+        ClassicHttpRequest build = ClassicRequestBuilder.post("http://localhost:8801/sandbox/execute").setEntity(jsonString, ContentType.APPLICATION_JSON).build();
+        ExecuteCodeResponse executeCodeResponse = null;
+        try {
+            CloseableHttpResponse res = http.execute(build);
+            HttpEntity entity = res.getEntity();
+            try {
+                String string = EntityUtils.toString(entity, StandardCharsets.UTF_8);
+                executeCodeResponse = JSONUtil.toBean(string, ExecuteCodeResponse.class);
+
+            } catch (ParseException e) {
+                throw new RuntimeException(e);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
 
         SubmitStatus submitStatus = executeCodeResponse.getSubmitStatus();
         if (submitStatus == SubmitStatus.CE) {
@@ -123,7 +151,7 @@ public class JudgeServiceImpl implements JudgeService {
             CheckPoint checkPoint = new CheckPoint();
             checkPointList.add(checkPoint);
 
-            if (Boolean.TRUE.equals(wallTimeout) || time > timeLimits.get(time))
+            if (Boolean.TRUE.equals(wallTimeout) || time > timeLimits.get(index))
                 checkPoint.setSubmitStatus(SubmitStatus.TLE);
             else if (memory > memoryLimits.get(index) || exitCode == DockerExitCodeConstants.MLE)
                 checkPoint.setMemory(memory);
@@ -137,7 +165,7 @@ public class JudgeServiceImpl implements JudgeService {
             checkPoint.setMemory(memory);
             checkPoint.setAccepted(checkPoint.getSubmitStatus() == SubmitStatus.ACCEPTED);
             checkPoint.setTime(time);
-
+            index++;
         }
 
         // 1. 寻找第一个非 ACCEPTED 的状态作为全局状态

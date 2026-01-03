@@ -109,24 +109,6 @@ public class DockerContainer {
             }
         };
 
-
-
-        AtomicLong maxMemory = new AtomicLong(0L);
-
-// 1. 订阅 Docker 统计信息流 内存监控
-        ResultCallback<Statistics> statisticsCallback = dockerClient.statsCmd(fullContainerId)
-                .exec(new ResultCallback.Adapter<Statistics>() {
-                    @Override
-                    public void onNext(Statistics stats) {
-                        // 获取当前内存使用量（单位：字节）
-                        Long usage = stats.getMemoryStats().getUsage();
-                        if (usage != null) {
-                            // 自动更新峰值
-                            maxMemory.accumulateAndGet(usage, Math::max);
-                        }
-                    }
-                });
-
         //运行cmd并记录时间
         InputStream inputStream = null;
         try {
@@ -137,16 +119,14 @@ public class DockerContainer {
             if(hasInput){
                 execStartCmd.withStdIn(inputStream);
             }
-//            long startCpuTime = getCpuTimeTOMilSeconds();
-            long startWallTime = System.currentTimeMillis();
+            long startWallTime = System.nanoTime();
             long wallTimeLimit = timeoutMilSeconds*5;
             execStartCmd.exec(frameAdapter).awaitCompletion(wallTimeLimit,TimeUnit.MILLISECONDS);//用awaitcompletion能第一时间知道程序执行完,要么报错，要么等10秒，测试结果是程序执行完成后都会报错，如果执行不完就是5倍时间。
              //ms
-            long endWallTime = System.currentTimeMillis();
-            long WallTimeUsed = endWallTime-startWallTime;
-            //获取endwalltime必须在获取endcputime之前，不然会导致walltimeused从97ms增到2000ms左右，
-            long endCpuTime = getCpuTimeTOMilSeconds();
-//            long cputimeUsed = endCpuTime - startCpuTime;
+            long endWallTime = System.nanoTime();
+            long WallTimeUsed = (endWallTime-startWallTime)/1_000_000;
+
+
 
 
             // 2. 读取 /app/report.txt 的内容

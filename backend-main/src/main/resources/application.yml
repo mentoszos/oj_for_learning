@@ -57,6 +57,10 @@ mybatis-plus:
       logic-delete-value: 1
       logic-not-delete-value: 0
 
+# Sandbox服务配置
+sandbox:
+  url: http://localhost:8801
+
 # 日志配置
 logging:
   level:

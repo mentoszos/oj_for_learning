@@ -6,7 +6,7 @@ import java.io.Serializable;
 import java.util.List;
 
 @Data
-public class JudgeInfo implements Serializable {
+public class  JudgeInfo implements Serializable {
     private static final long serialVersionUID = 1L;
     private List<CheckPoint> checkPoints;
     private Integer totalPass;
