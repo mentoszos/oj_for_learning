@@ -53,17 +53,11 @@ public class JudgeServiceImpl implements JudgeService {
     @Autowired
     private QuestionUsecaseMapper questionUsecaseMapper;
 
-    @Autowired
-    private RabbitTemplate rabbitTemplate;
-
-    @Autowired
-    private CodeSandbox codeSandbox;
-
     private static final String JUDGE_QUEUE = "code_judge_queue";
 
     @Override
-    public QuestionSubmit getSubmitResult(Long submitId) {
-        return questionSubmitMapper.selectById(submitId);
+    public QuestionSubmit getSubmitResult(Integer questionId, Integer userId) {
+
     }
 
     @Override
@@ -80,7 +74,7 @@ public class JudgeServiceImpl implements JudgeService {
         submit.setStatus(2);
         submit.setUserId(1);
 
-        questionSubmitMapper.insert(submit);
+//        questionSubmitMapper.insert(submit);
 
         //todo  2. 发送到消息队列（异步判题）
 //        rabbitTemplate.convertAndSend(JUDGE_QUEUE, submit.getId());
@@ -182,6 +176,8 @@ public class JudgeServiceImpl implements JudgeService {
         judgeInfo.setTotal(total);
         judgeInfo.setTotalPass(totalPass);
         String errMsg = executeCodeResponse.getErrMsg();
+        submit.setJudgeInfo(judgeInfo);
+        questionSubmitMapper.insert(submit);
 
         return SubmitResultVO.builder()
                 .codeLanguage(submitLanguageType.getValue())

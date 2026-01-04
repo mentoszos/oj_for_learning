@@ -39,9 +39,9 @@ public class SubmitController {
 //        return BaseResponse.success(debugVO);
 //    }
 
-    @GetMapping("/{submitId}")
-    public BaseResponse<SubmitResultVO> getSubmitResult(@PathVariable Long submitId) {
-        QuestionSubmit submit = judgeService.getSubmitResult(submitId);
+    @GetMapping
+    public BaseResponse<SubmitResultVO> getSubmitResult(@PathVariable Integer questionId, @PathVariable Integer userId) {
+        QuestionSubmit submit = judgeService.getSubmitResult(questionId,userId);
         if (submit == null) {
             return BaseResponse.error(ErrorCode.NOT_FOUND_ERROR,"提交记录不存在");
         }

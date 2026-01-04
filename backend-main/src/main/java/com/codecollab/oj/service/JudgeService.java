@@ -10,8 +10,9 @@ public interface JudgeService {
     /**
      * 获取判题结果
      */
-    QuestionSubmit getSubmitResult(Long submitId);
 
     SubmitResultVO submitCode(SubmitRequest request);
+
+    QuestionSubmit getSubmitResult(Integer questionId, Integer userId);
 }
 
