@@ -19,12 +19,13 @@ import com.codecollab.oj.util.ThrowUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping(("/questions"))
+@RequestMapping("/questions")
 @Slf4j
 @Tag(name = "题目管理模块",description = "题目管理")
 public class ProblemController {
@@ -42,6 +43,7 @@ public class ProblemController {
 
     @GetMapping("/{id}")
     @Operation(summary = "根据id查题目")
+    @PreAuthorize("hasAuthority('question:view')")
     public BaseResponse<QuestionVO> getQuestion(@PathVariable Integer id){
         ThrowUtils.throwIf(ObjectUtil.isAllEmpty(id), ErrorCode.NOT_FOUND_ERROR,"参数不能为空");
         QuestionVO questionVO = questionService.getQuestionById(id);
@@ -50,6 +52,7 @@ public class ProblemController {
 
     @GetMapping("/page")
     @Operation(summary = "条件查分页")
+    @PreAuthorize("hasAuthority('question:view')")
     public BaseResponse<PageVO<QuestionVO>> getQuestions(QuestionQueryRequest questionQueryRequest){
         ThrowUtils.throwIf(ObjectUtil.isAllEmpty(questionQueryRequest), ErrorCode.NOT_FOUND_ERROR,"参数不能为空");
         PageVO<QuestionVO> questions = questionService.getQuestions(questionQueryRequest);
@@ -58,6 +61,7 @@ public class ProblemController {
 
     @PutMapping
     @Operation(summary = "修改题目信息")
+    @PreAuthorize("hasAuthority('question:manage')")
     public BaseResponse updateQuestion(@RequestBody QuestionModifyRequest questionModifyRequest){
         ThrowUtils.throwIf(ObjectUtil.isAllEmpty(questionModifyRequest), ErrorCode.NOT_FOUND_ERROR,"参数不能为空");
         boolean b = questionService.modify(questionModifyRequest);
@@ -68,6 +72,7 @@ public class ProblemController {
     }
     @DeleteMapping("/{id}")
     @Operation(summary = "根据id删题目")
+    @PreAuthorize("hasAuthority('question:manage')")
     public BaseResponse delQuestion(@PathVariable Long id){
         ThrowUtils.throwIf(ObjectUtil.isAllEmpty(id), ErrorCode.NOT_FOUND_ERROR,"参数不能为空");
         boolean b = questionService.removeQuestionsById(id);
@@ -77,6 +82,7 @@ public class ProblemController {
 
     @DeleteMapping("/batch")
     @Operation(summary = "批量根据ids删题目")
+    @PreAuthorize("hasAuthority('question:manage')")
     public BaseResponse delQuestions(@RequestBody DeleteRequest deleteRequest){
         ThrowUtils.throwIf(ObjectUtil.isAllEmpty(deleteRequest), ErrorCode.NOT_FOUND_ERROR,"参数不能为空");
         List<Long> ids = deleteRequest.getIds();
@@ -87,6 +93,7 @@ public class ProblemController {
 
     @PostMapping
     @Operation(summary = "添加问题")
+    @PreAuthorize("hasAuthority('question:manage')")
     public BaseResponse<Integer> addQuestion(@RequestBody QuestionAddRequest questionAddRequest){
         ThrowUtils.throwIf(ObjectUtil.isAllEmpty(questionAddRequest), ErrorCode.NOT_FOUND_ERROR,"参数不能为空");
         log.info("问题添加,题目为：{}",questionAddRequest.getTitle());
@@ -97,39 +104,20 @@ public class ProblemController {
 /// /////////////////////
     @GetMapping("/info/{questionId}")
     @Operation(summary = "题目文本查询")
+    @PreAuthorize("hasAuthority('question:view')")
     public BaseResponse<QuestionInfo> questionInfo(@PathVariable Integer questionId){
         ThrowUtils.throwIf(ObjectUtil.isNull(questionId),ErrorCode.NULL_ERROR);
         QuestionInfo questionInfo = questionInfoService.getByQuestionId(questionId);
         return BaseResponse.success(questionInfo);
     }
 /// /////
-    @GetMapping("/submitRecord")
-    @Operation(summary = "查询用户某一题的提交记录")
-    public BaseResponse<SubmitResultVO> submitResult(@RequestParam Integer questionId, @RequestParam Integer userId){
-        ThrowUtils.throwIf(!(ObjectUtil.isNotEmpty(questionId) && ObjectUtil.isNotEmpty(userId)), ErrorCode.NULL_ERROR,"查询用户的提交记录，参数不全");
-        SubmitResultVO resultVo= questionSubmitService.getSubmitResult(questionId,userId);
-        return BaseResponse.success(resultVo);
-    }
-    @DeleteMapping("/submitRecord")
-    @Operation(summary = "删除某一个提交记录")
-    public BaseResponse<?> delSubmitResult(@RequestParam Long id){
-        boolean b = questionSubmitService.removeById(id);
-        if (b) return BaseResponse.success(b);
-        return BaseResponse.error(ErrorCode.OPERATION_ERROR,"删除失败");
-    }
-    @PostMapping("/submitRecord/batch")
-    @Operation(summary = "批量删除提交记录")
-    public BaseResponse<?> delBatchSubmitResult(@RequestBody DeleteRequest deleteRequest){
-        List<Long> ids = deleteRequest.getIds();
-        boolean b = questionSubmitService.removeBatchByIds(ids);
-        if (b) return BaseResponse.success(b);
-        return BaseResponse.error(ErrorCode.OPERATION_ERROR,"删除失败");
-    }
+
 
 
     /// ////////////////////////////////////////////////////////////////////////////
     @PostMapping("/usecase")
     @Operation(summary = "批量增加测试用例")
+    @PreAuthorize("hasAuthority('usecase:manage')")
     public BaseResponse<?> addBatchUsecase(@RequestBody List<QuestionUsecaseAddRequest> questionUsecaseAddRequests){
         ThrowUtils.throwIf(ObjectUtil.isEmpty(questionUsecaseAddRequests),ErrorCode.NULL_ERROR);
         //todo 这里需要加上number的注入
@@ -140,6 +128,7 @@ public class ProblemController {
 
     @PostMapping("/usecase/batch")
     @Operation(summary = "批量删除测试用例")
+    @PreAuthorize("hasAuthority('usecase:manage')")
     public BaseResponse<?> delBatchUsecase(@RequestBody DeleteRequest deleteRequest){
         ThrowUtils.throwIf(ObjectUtil.isEmpty(deleteRequest),ErrorCode.NULL_ERROR);
         List<Long> ids = deleteRequest.getIds();
@@ -152,6 +141,7 @@ public class ProblemController {
 
     @PostMapping("/usecase/page")
     @Operation(summary = "分页查询测试用例")
+    @PreAuthorize("hasAuthority('usecase:manage')")
     //只会返回id，和number，具体的内容需要调用getUsecase获取
     public BaseResponse<PageVO<List<UsecaseVO>>> usecasePage(@RequestBody QuestionUsecaseQueryRequest queryRequest){
         ThrowUtils.throwIf(ObjectUtil.isEmpty(queryRequest),ErrorCode.NULL_ERROR);
@@ -161,6 +151,7 @@ public class ProblemController {
     }
     @GetMapping("/usecase/input")
     @Operation(summary = "查询测试用例的输入")
+    @PreAuthorize("hasAuthority('usecase:manage')")
     //todo
     //后期可以考虑返回文件或者其他形式
     public BaseResponse<String> usecaseInput(@RequestParam Long id){
@@ -171,6 +162,7 @@ public class ProblemController {
 
     @GetMapping("/usecase/output")
     @Operation(summary = "查询测试用例的输出")
+    @PreAuthorize("hasAuthority('usecase:manage')")
     //todo
     //后期可以考虑返回文件或者其他形式
     public BaseResponse<String> usecaseOutput(@RequestParam Long id){
@@ -183,6 +175,7 @@ public class ProblemController {
 
     @GetMapping("/usecase")
     @Operation(summary = "查询详细的测试用例")
+    @PreAuthorize("hasAuthority('usecase:manage')")
     //这个接口暂时用不到
     public BaseResponse<UsecaseVO> getUsecase(@RequestParam Integer id){
         ThrowUtils.throwIf(ObjectUtil.isEmpty(id),ErrorCode.NULL_ERROR);

@@ -17,12 +17,13 @@ import org.springframework.stereotype.Service;
 @Service
 public class QuestionSubmitServiceImpl extends ServiceImpl<QuestionSubmitMapper, QuestionSubmit>
     implements QuestionSubmitService{
-
     @Override
     public SubmitResultVO getSubmitResult(Integer questionId, Integer userId) {
         LambdaQueryWrapper<QuestionSubmit> queryWrapper = new LambdaQueryWrapper();
         queryWrapper.eq(QuestionSubmit::getQuestionId,questionId)
-                .eq(QuestionSubmit::getUserId,userId);
+                .eq(QuestionSubmit::getUserId,userId)
+                .orderByDesc(QuestionSubmit::getCreateTime)
+                .last("limit 1");
         QuestionSubmit questionSubmit = this.getOne(queryWrapper);
         SubmitResultVO submitResultVO = BeanUtil.copyProperties(questionSubmit, SubmitResultVO.class);
         return submitResultVO;

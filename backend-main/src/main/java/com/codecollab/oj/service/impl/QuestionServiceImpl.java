@@ -7,7 +7,7 @@ import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.codecollab.oj.context.UserHolder;
+
 import com.codecollab.oj.model.dto.*;
 import com.codecollab.oj.model.entity.*;
 import com.codecollab.oj.model.vo.PageVO;

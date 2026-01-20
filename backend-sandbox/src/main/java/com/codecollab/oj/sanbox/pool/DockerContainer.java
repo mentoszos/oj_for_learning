@@ -121,8 +121,8 @@ public class DockerContainer {
             }
             long startWallTime = System.nanoTime();
             long wallTimeLimit = timeoutMilSeconds*5;
-            execStartCmd.exec(frameAdapter).awaitCompletion(wallTimeLimit,TimeUnit.MILLISECONDS);//用awaitcompletion能第一时间知道程序执行完,要么报错，要么等10秒，测试结果是程序执行完成后都会报错，如果执行不完就是5倍时间。
-             //ms
+            boolean b = execStartCmd.exec(frameAdapter).awaitCompletion(wallTimeLimit, TimeUnit.MILLISECONDS);//用awaitcompletion能第一时间知道程序执行完,要么报错，要么等10秒，测试结果是程序执行完成后都会报错，如果执行不完就是5倍时间。
+//ms
             long endWallTime = System.nanoTime();
             long WallTimeUsed = (endWallTime-startWallTime)/1_000_000;
 

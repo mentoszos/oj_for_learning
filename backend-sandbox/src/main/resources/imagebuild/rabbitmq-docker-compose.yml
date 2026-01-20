@@ -1,0 +1,14 @@
+version: '3.8'
+services:
+  rabbitmq:
+    image: rabbitmq:3.12-management # 必须带 -management 才有后台界面
+    container_name: oj-rabbitmq
+    restart: always
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    ports:
+      - "5672:5672"   # 代码连接的端口
+      - "15672:15672" # 后台管理界面端口
+    volumes:
+      - ./rabbitmq_data:/var/lib/rabbitmq # 数据持久化，防止重启后消息丢失

@@ -1,5 +1,6 @@
 package com.codecollab.oj.sanbox.docker;
 
+import cn.hutool.core.lang.UUID;
 import com.codecollab.oj.sanbox.pool.DockerContainer;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.model.HostConfig;
@@ -17,6 +18,7 @@ public class DockerManager {
 
     public DockerContainer createContainer(String image){
         String containerId = dockerClient.createContainerCmd(image).withHostConfig(new HostConfig().withMemory(256 * 1024 * 1024L)) //64MB
+                .withName("oj-"+ UUID.randomUUID())
                 .withNetworkDisabled(true)
                 .withWorkingDir("/app")
                 .withCmd("tail", "-f", "/dev/null") //给他一个命令，不然他启动了直接停止

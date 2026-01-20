@@ -7,8 +7,11 @@ import java.time.LocalDateTime;
 
 import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
 import com.codecollab.oj.common.enums.SubmitLanguageType;
+import com.codecollab.oj.common.enums.SubmitStatus;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * 题目提交记录
@@ -16,6 +19,9 @@ import lombok.Data;
  */
 @TableName(value ="question_submit",autoResultMap = true)
 @Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class QuestionSubmit implements Serializable {
     private static final long serialVersionUID = 1L;
     /**
@@ -71,4 +77,10 @@ public class QuestionSubmit implements Serializable {
      */
     @TableField(value = "code_language")
     private SubmitLanguageType codeLanguage;
+
+    @TableField(value = "submit_status")
+    private SubmitStatus submitStatus;
+
+    @TableField(value = "error_message")
+    private String errMsg;
 }
