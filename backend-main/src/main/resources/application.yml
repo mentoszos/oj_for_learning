@@ -43,8 +43,13 @@ spring:
     virtual-host: /
     listener:
       simple:
+        retry:
+          enabled: true
+          max-attempts: 3
+          initial-interval: 3000ms
         acknowledge-mode: manual
         prefetch: 10
+        default-requeue-rejected: false
     publisher-confirm-type: correlated
 # MyBatis Plus配置
 mybatis-plus:

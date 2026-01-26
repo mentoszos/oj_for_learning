@@ -4,6 +4,8 @@ import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.alibaba.fastjson2.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import com.baomidou.mybatisplus.core.toolkit.IdWorker;
 import com.codecollab.oj.Manager.SseManager;
 import com.codecollab.oj.common.enums.ErrorCode;
 import com.codecollab.oj.common.enums.SubmitLanguageType;
@@ -11,6 +13,7 @@ import com.codecollab.oj.common.enums.SubmitStatus;
 import com.codecollab.oj.constants.MqConstants;
 import com.codecollab.oj.context.UserHolder;
 import com.codecollab.oj.exception.BusinessException;
+import com.codecollab.oj.mapper.MqMessageLogMapper;
 import com.codecollab.oj.mapper.QuestionSubmitMapper;
 import com.codecollab.oj.mapper.QuestionUsecaseMapper;
 import com.codecollab.oj.model.dto.DebugRequest;
@@ -41,6 +44,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
@@ -63,8 +67,11 @@ public class JudgeServiceImpl implements JudgeService {
     private RabbitTemplate rabbitTemplate;
     @Autowired
     private SseManager sseManager;
+    @Autowired
+    private MqMessageLogMapper mqMessageLogMapper;
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public SubmitResultVO submitCode(SubmitRequest request) {
         // 1. 创建提交记录
         QuestionSubmit submit = new QuestionSubmit();
@@ -79,11 +86,24 @@ public class JudgeServiceImpl implements JudgeService {
         Integer userId = UserHolder.getUserId();
 
         submit.setUserId(userId);
+// 2. 同时在同一个事务里，保存一条消息日志
+        MqMessageLog messageLog = new MqMessageLog();
+        messageLog.setId(IdWorker.getId()); // 生成一个分布式ID
+        messageLog.setContent(String.valueOf(submit.getId()));
+        messageLog.setStatus(0); // 投递中
 
         questionSubmitMapper.insert(submit);
+        mqMessageLogMapper.insert(messageLog);
 
         //todo  2. 发送到消息队列（异步判题）
-        rabbitTemplate.convertAndSend(MqConstants.JUDGE_EXCHANGE_NAME,MqConstants.ROUTING_KEY, submit.getId());
+        try{
+            rabbitTemplate.convertAndSend(MqConstants.JUDGE_EXCHANGE_NAME,MqConstants.ROUTING_KEY, submit.getId());
+            messageLog.setStatus(1);
+            mqMessageLogMapper.updateById(messageLog);
+        }catch (Exception e){
+            log.error("MQ 初次发送失败，等待定时任务补偿: {}", e.getMessage());
+        }
+
         return SubmitResultVO.builder().id(submit.getId()).build();
     }
 
@@ -92,7 +112,20 @@ public class JudgeServiceImpl implements JudgeService {
         QuestionSubmit submit = questionSubmitMapper.selectById(submitId);
 
         //做个幂等校验，如果已经判题了就别管他了，其实重新执行一次也是可以，但会浪费资源
-        if (submit.getStatus() == 2) return null;
+        if (submit == null) {//查不到记录，应该不会出现这种情况
+            channel.basicAck(deliveryTag, false);
+            return null;
+        }
+        UpdateWrapper<QuestionSubmit> updateWrapper = new UpdateWrapper<QuestionSubmit>()
+                .eq("id", submitId)
+                .ne("status", 2) // 只有原状态是待判题，才允许更新
+                .set("status", 2);
+        int row = questionSubmitMapper.update(updateWrapper);
+        if (row < 1){
+            channel.basicAck(deliveryTag, false);
+            return null;
+        }
+
         Integer userId = submit.getUserId();
 //        Integer userId = 1;
         String code = submit.getSumbitCode();
