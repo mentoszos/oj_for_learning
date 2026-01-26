@@ -1,5 +1,9 @@
 server:
   port: 8802
+  tomcat:
+    max-connections: 10000
+    threads:
+      max: 200
   servlet:
     context-path: /api
 
