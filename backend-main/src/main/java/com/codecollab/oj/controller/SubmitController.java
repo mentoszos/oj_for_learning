@@ -1,6 +1,7 @@
 package com.codecollab.oj.controller;
 
 import cn.hutool.core.util.ObjectUtil;
+import com.codecollab.oj.annotations.RateLimit;
 import com.codecollab.oj.common.BaseResponse;
 import com.codecollab.oj.common.enums.ErrorCode;
 
@@ -73,6 +74,7 @@ public class SubmitController {
     @PostMapping(value = "/submit")
     @Operation(summary = "提交代码并判题")
     @PreAuthorize("hasAuthority('submission:add')")
+    @RateLimit
     public BaseResponse<SubmitResultVO> submitCode(@RequestBody SubmitRequest request) {
         SubmitResultVO submitResultVO = judgeService.submitCode(request);
         return BaseResponse.success(submitResultVO);
@@ -81,6 +83,7 @@ public class SubmitController {
     @PostMapping("/debug")
     @Operation(summary = "debug代码")
     @PreAuthorize("hasAuthority('submission:add')")
+    @RateLimit
     public BaseResponse<DebugVO> debugCode(@RequestBody DebugRequest request) {
         DebugVO vo = judgeService.debugCode(request);
         return BaseResponse.success(vo);
@@ -90,6 +93,7 @@ public class SubmitController {
     @GetMapping
     @Operation(summary = "查询用户某一题的提交记录")
     @PreAuthorize("hasAuthority('submission:view')")
+    @RateLimit
     public BaseResponse<SubmitResultVO> submitResult(@RequestParam Integer questionId, @RequestParam Integer userId){
         ThrowUtils.throwIf(!(ObjectUtil.isNotEmpty(questionId) && ObjectUtil.isNotEmpty(userId)), ErrorCode.NULL_ERROR,"查询用户的提交记录，参数不全");
         SubmitResultVO resultVo= questionSubmitService.getSubmitResult(questionId,userId);
@@ -97,6 +101,7 @@ public class SubmitController {
     }
 //    @DeleteMapping("/submitRecord")
 //    @Operation(summary = "删除某一个提交记录")
+//    @RateLimit
 //    public BaseResponse<?> delSubmitResult(@RequestParam Long id){
 //        boolean b = questionSubmitService.removeById(id);
 //        if (b) return BaseResponse.success(b);
@@ -105,6 +110,7 @@ public class SubmitController {
     @PostMapping("/submitRecord/batch")
     @Operation(summary = "批量删除提交记录")
     @PreAuthorize("hasAuthority('submission:manage')")
+    @RateLimit
     public BaseResponse<?> delBatchSubmitResult(@RequestBody DeleteRequest deleteRequest){
         List<Long> ids = deleteRequest.getIds();
         boolean b = questionSubmitService.removeBatchByIds(ids);

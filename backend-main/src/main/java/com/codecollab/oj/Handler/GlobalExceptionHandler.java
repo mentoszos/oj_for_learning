@@ -4,8 +4,15 @@ import com.codecollab.oj.common.BaseResponse;
 import com.codecollab.oj.common.enums.ErrorCode;
 import com.codecollab.oj.exception.BusinessException;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+
+
+
 
 @Slf4j
 @RestControllerAdvice
@@ -14,6 +21,18 @@ public class GlobalExceptionHandler {
     public BaseResponse<?> businessExceptionHandler(BusinessException e){
         log.error("businessException",e);
         return BaseResponse.error(e.getCode(),e.getMessage());
+    }
+    @ExceptionHandler(AccessDeniedException.class)
+    public void handleAccessDeniedException(AccessDeniedException e) throws AccessDeniedException {
+        throw e;
+    }
+
+    /**
+     * 2. 专门处理认证失败 (登录相关)
+     */
+    @ExceptionHandler(AuthenticationException.class)
+    public BaseResponse<?> handleAuthenticationException(AuthenticationException e) throws AuthenticationException {
+        throw e;
     }
 
     @ExceptionHandler(RuntimeException.class)

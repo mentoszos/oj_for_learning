@@ -2,8 +2,7 @@ package com.codecollab.oj.config;
 
 import com.codecollab.oj.Handler.CustomAccessDeniedHandler;
 import com.codecollab.oj.Handler.UnAuthorizedHandler;
-import com.codecollab.oj.filters.JWTAuthenticationFilter;
-import org.apache.http.protocol.HTTP;
+import com.codecollab.oj.Filters.JWTAuthenticationFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

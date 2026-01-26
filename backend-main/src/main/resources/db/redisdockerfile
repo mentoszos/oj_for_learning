@@ -1,0 +1,15 @@
+version: '3.8'
+services:
+  redis:
+    image: redis:latest
+    container_name: oj-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    # 直接在 command 里传参，效果和你那行 docker run 一样
+    command: redis-server --requirepass 12345 --appendonly yes
+    volumes:
+      - redis_data:/data
+
+volumes:
+  redis_data:
