@@ -43,7 +43,8 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/swagger-resources/**",
                                 "/sse",
-                                "/favicon.ico").permitAll()
+                                "/favicon.ico",
+                                "/ws/**").permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(exception->exception.authenticationEntryPoint(unAuthorizedHandler).accessDeniedHandler(accessDeniedHandler));
         httpSecurity.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
