@@ -120,7 +120,7 @@ public class DockerContainer {
                 execStartCmd.withStdIn(inputStream);
             }
             long startWallTime = System.nanoTime();
-            long wallTimeLimit = timeoutMilSeconds*5;
+            long wallTimeLimit = Math.min(timeoutMilSeconds*5,5000);
             boolean b = execStartCmd.exec(frameAdapter).awaitCompletion(wallTimeLimit, TimeUnit.MILLISECONDS);//用awaitcompletion能第一时间知道程序执行完,要么报错，要么等10秒，测试结果是程序执行完成后都会报错，如果执行不完就是5倍时间。
 //ms
             long endWallTime = System.nanoTime();
@@ -148,24 +148,39 @@ public class DockerContainer {
 
 
             if (inspectExecResponse.isRunning()) {//因为要跑所有测试用例，所以这里不把代码删了
-                this.stopProcesses();
+                Thread.sleep(3000);
+                if (dockerClient.inspectExecCmd(execId).exec().isRunning()) {
+                    this.stopProcesses();
+                    //对恶意超时的特判，恶意卡时间或没有结束的时候的时候会读不到report的内容
+                    ExecuteMessage executeMessage = ExecuteMessage.builder()
+                            .errMessage("程序没有正常结束")
+                            .exitCode(-1L)
+                            .wallTimeout(true)
+                            .time((int) cputimeUsed)
+//                    .memory((maxMemory.get() / 1024.0 / 1024))
+                            .memory(maxMemoryMBytes)
+                            .build();
+                    return executeMessage;
+                }
             }
-
-
             //查看执行结果数据
             Long exitCodeLong = inspectExecResponse.getExitCodeLong();
             exitCodeLong = (exitCodeLong == null) ? -1L : Math.toIntExact(exitCodeLong);
             boolean timeout = WallTimeUsed>wallTimeLimit;//墙上时间大于5倍cpu要求时间说明有问题，给他tle；
 
-            ExecuteMessage executeMessage = ExecuteMessage.builder()
+            ExecuteMessage executeMessage = null;
+
+
+            executeMessage = ExecuteMessage.builder()
                     .errMessage(err.toString().trim())
                     .output(out.toString().trim())
                     .exitCode(exitCodeLong)
                     .wallTimeout(timeout)
                     .time((int) cputimeUsed)
-//                    .memory((maxMemory.get() / 1024.0 / 1024))
+//                   .memory((maxMemory.get() / 1024.0 / 1024))
                     .memory(maxMemoryMBytes)
                     .build();
+
             return executeMessage;
         } catch (RuntimeException  e) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, e.getMessage());

@@ -14,6 +14,7 @@ public enum SubmitStatus {
     MLE("MemoryLimitExceed",3),
     RE("RuntimeError",4),
     CE("CompileError",5),
+    ERROR("DockerError",7),
     OLE("OutputLimitExceed",6);
     private final String text;
     private final Integer value;

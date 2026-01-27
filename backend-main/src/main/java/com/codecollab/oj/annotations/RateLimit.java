@@ -9,7 +9,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface RateLimit {
     String key() default "rate_limit:";
-    int count() default 5;
+    int count() default 100;
     //60s
     int period() default 60;
 }

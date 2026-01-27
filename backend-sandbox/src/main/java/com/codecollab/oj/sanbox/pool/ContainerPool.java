@@ -31,7 +31,14 @@ public class ContainerPool {
     }
 
     public DockerContainer borrowContainer(){
-        return containers.poll();
+        DockerContainer poll = containers.poll();
+        if (poll == null) {
+            DockerContainer container = dockerManager.createContainer("oj-java:1.0");//内存监控需要这个
+            containers.offer(container);
+            dockerManager.startContainer(container.getContainerId());
+            poll = container;
+        }
+        return poll;
     }
 
     public void returnContainer(DockerContainer container){

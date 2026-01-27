@@ -44,7 +44,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
@@ -71,7 +74,7 @@ public class JudgeServiceImpl implements JudgeService {
     private MqMessageLogMapper mqMessageLogMapper;
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
+    @Transactional(rollbackFor = Exception.class,propagation = Propagation.REQUIRES_NEW)
     public SubmitResultVO submitCode(SubmitRequest request) {
         // 1. 创建提交记录
         QuestionSubmit submit = new QuestionSubmit();
@@ -94,21 +97,26 @@ public class JudgeServiceImpl implements JudgeService {
 
         questionSubmitMapper.insert(submit);
         mqMessageLogMapper.insert(messageLog);
-
-        //todo  2. 发送到消息队列（异步判题）
-        try{
-            rabbitTemplate.convertAndSend(MqConstants.JUDGE_EXCHANGE_NAME,MqConstants.ROUTING_KEY, submit.getId());
-            messageLog.setStatus(1);
-            mqMessageLogMapper.updateById(messageLog);
-        }catch (Exception e){
-            log.error("MQ 初次发送失败，等待定时任务补偿: {}", e.getMessage());
-        }
-
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                try{
+                    messageLog.setStatus(1);
+                    //todo 这个后期要改为一个带事务的方法，这里懒得改了
+                    mqMessageLogMapper.updateById(messageLog);
+                    rabbitTemplate.convertAndSend(MqConstants.JUDGE_EXCHANGE_NAME,MqConstants.ROUTING_KEY, submit.getId());
+                }catch (Exception e){
+                    log.error("MQ 初次发送失败，等待定时任务补偿: {}", e.getMessage());
+                }
+            }
+        });
         return SubmitResultVO.builder().id(submit.getId()).build();
     }
 
+
+
     @RabbitListener(queues = MqConstants.JUDGE_QUEUE)
-    public SubmitResultVO onJudge(String submitId, Channel channel,@Header(AmqpHeaders.DELIVERY_TAG) long deliveryTag) throws IOException {
+    public SubmitResultVO onJudge(Long submitId, Channel channel,@Header(AmqpHeaders.DELIVERY_TAG) long deliveryTag) throws IOException {
         QuestionSubmit submit = questionSubmitMapper.selectById(submitId);
 
         //做个幂等校验，如果已经判题了就别管他了，其实重新执行一次也是可以，但会浪费资源
@@ -181,15 +189,16 @@ public class JudgeServiceImpl implements JudgeService {
 
         submit.setStatus(2);
         SubmitStatus submitStatus = executeCodeResponse.getSubmitStatus();
-        if (submitStatus == SubmitStatus.CE) {
+        if (submitStatus == SubmitStatus.CE || submitStatus == SubmitStatus.ERROR) {
             submit.setSubmitStatus(submitStatus);
             submit.setErrMsg(executeCodeResponse.getErrMsg());
             questionSubmitMapper.updateById(submit);
             channel.basicAck(deliveryTag, false);
-            sseManager.sendMessage(userId,SubmitResultVO.builder()
-                            .submitStatus(submitStatus)
-                            .errMsg(executeCodeResponse.getErrMsg())
-                    .build());
+            SubmitResultVO submitResultVO = SubmitResultVO.builder()
+                    .submitStatus(submitStatus)
+                    .errMsg(executeCodeResponse.getErrMsg())
+                    .build();
+            sseManager.sendMessage(userId, submitResultVO);
             return null;
         }
         List<CheckPoint> checkPointList = new LinkedList<>();

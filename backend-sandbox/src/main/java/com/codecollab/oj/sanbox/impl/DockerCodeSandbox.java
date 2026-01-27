@@ -56,6 +56,11 @@ public class DockerCodeSandbox implements CodeSandbox {
                 double memoryLimit = memoryLimits.get(i);
                 ExecuteMessage executeMessage = container.executeCode(input, timeLimit, memoryLimit);
                 executeMessages.add(executeMessage);
+                if (executeMessage.getExitCode() != DockerExitCodeConstants.SUCCESS) {
+                    executeCodeResponse.setSubmitStatus(SubmitStatus.ERROR);
+                    executeCodeResponse.setErrMsg(executeMessage.getErrMessage());
+                    break;
+                }
             }
             return executeCodeResponse;
         } catch (InterruptedException e) {

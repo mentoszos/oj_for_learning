@@ -24,6 +24,6 @@ public interface JudgeService {
 
 
     DebugVO debugCode(DebugRequest request);
-    SubmitResultVO onJudge(String submitId, Channel channel, @Header(AmqpHeaders.DELIVERY_TAG) long deliveryTag) throws IOException;
+    SubmitResultVO onJudge(Long submitId, Channel channel, @Header(AmqpHeaders.DELIVERY_TAG) long deliveryTag) throws IOException;
 }
 
