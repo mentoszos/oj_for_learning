@@ -35,6 +35,11 @@ public class DockerManager {
     public void startContainer(String containerId){
         dockerClient.startContainerCmd(containerId).exec();
     }
+    public void removeContainer(String containerId){
+        dockerClient.removeContainerCmd(containerId).exec();
+    }
+
+
 
 
 }

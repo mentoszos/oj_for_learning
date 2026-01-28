@@ -199,8 +199,8 @@ public class DockerContainer {
 
     private void restartContainer(){
         dockerClient.restartContainerCmd(containerId).withTimeout(0).exec();
-
     }
+
 
     private long getCpuTimeTOMilSeconds() {
         try {
