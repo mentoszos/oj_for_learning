@@ -1,0 +1,13 @@
+services:
+  oj-rabbitmq:
+    image: rabbitmq:3.12-management
+    container_name: oj-rabbitmq
+    restart: always
+    ports:
+      - "5672:5672"   # 消息队列端口
+      - "15672:15672" # 管理后台端口
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    volumes:
+      - "D:\\mq_data:/var/lib/rabbitmq"

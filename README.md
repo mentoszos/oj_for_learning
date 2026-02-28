@@ -56,7 +56,7 @@ CREATE DATABASE codecollab_oj CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 执行建表脚本：
 ```bash
-mysql -u root -p codecollab_oj < src/main/resources/db/schema.sql
+mysql -u root -p codecollab_oj < src/main/resources/db/mysql-docker-compose.yml
 ```
 
 ### 3. 配置文件
