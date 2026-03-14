@@ -14,7 +14,7 @@ spring:
   # 数据源配置
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/codecollab_oj?allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&rewriteBatchedStatements=true
+    url: jdbc:mysql://121.248.201.3:3306/codecollab_oj?allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&rewriteBatchedStatements=true
     username: root
     password: 123456
     hikari:
@@ -27,9 +27,9 @@ spring:
   # Redis配置
   data:
     redis:
-      host: localhost
+      host: 121.248.201.3
       port: 6379
-      password: 12345
+#      password: 12345
       database: 0
       timeout: 3000ms
       lettuce:
@@ -40,7 +40,7 @@ spring:
   
   # RabbitMQ配置
   rabbitmq:
-    host: localhost
+    host: 121.248.201.3
     port: 5672
     username: guest
     password: guest

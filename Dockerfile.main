@@ -1,0 +1,32 @@
+# ==================== 阶段一：Maven 构建 ====================
+FROM maven:3.9-eclipse-temurin-17-alpine AS builder
+
+WORKDIR /build
+
+# 先复制所有 pom.xml，利用 Docker 层缓存加速依赖下载
+COPY pom.xml .
+COPY backend-common/pom.xml backend-common/
+COPY backend-main/pom.xml backend-main/
+COPY backend-sandbox/pom.xml backend-sandbox/
+
+RUN mvn dependency:go-offline -B
+
+# 只需要 common 和 main 的源码
+COPY backend-common/src backend-common/src
+COPY backend-main/src backend-main/src
+
+# 只打包 backend-main，跳过测试
+RUN mvn clean package -pl backend-common,backend-main -DskipTests -B
+
+# ==================== 阶段二：运行 ====================
+FROM eclipse-temurin:17-jre-alpine
+
+WORKDIR /app
+
+COPY --from=builder /build/backend-main/target/*.jar app.jar
+
+ENV JAVA_OPTS="-Xms256m -Xmx512m -XX:+UseContainerSupport"
+
+EXPOSE 8802
+
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]

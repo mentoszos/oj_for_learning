@@ -23,7 +23,7 @@ import com.codecollab.oj.model.dto.SubmitRequest;
 import com.codecollab.oj.model.entity.*;
 import com.codecollab.oj.model.vo.DebugVO;
 import com.codecollab.oj.model.vo.SubmitResultVO;
-import com.codecollab.oj.sanbox.constant.DockerExitCodeConstants;
+import com.codecollab.oj.constants.DockerExitCodeConstants;
 import com.codecollab.oj.service.JudgeService;
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Channel;
@@ -41,6 +41,7 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.AmqpHeaders;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -72,7 +73,8 @@ public class JudgeServiceImpl implements JudgeService {
     private SseManager sseManager;
     @Autowired
     private MqMessageLogMapper mqMessageLogMapper;
-
+    @Value("${sandbox.url}")
+    private String baseUrl;
     @Override
     @Transactional(rollbackFor = Exception.class,propagation = Propagation.REQUIRES_NEW)
     public SubmitResultVO submitCode(SubmitRequest request) {
@@ -166,7 +168,8 @@ public class JudgeServiceImpl implements JudgeService {
 //        ExecuteCodeResponse executeCodeResponse = codeSandbox.executeCode(executeCodeRequest);
         String jsonString = JSONObject.toJSONString(executeCodeRequest);
         CloseableHttpClient http = HttpClientBuilder.create().build();
-        ClassicHttpRequest build = ClassicRequestBuilder.post("http://localhost:8801/sandbox/execute").setEntity(jsonString, ContentType.APPLICATION_JSON).build();
+//        String baseUrl = "http://localhost:8801";
+        ClassicHttpRequest build = ClassicRequestBuilder.post(baseUrl+"/sandbox/execute").setEntity(jsonString, ContentType.APPLICATION_JSON).build();
         ExecuteCodeResponse executeCodeResponse = null;
 
         //如果调用出现异常，不会设置为已完成判题,返回nack让他把消息重新放到队头
