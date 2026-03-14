@@ -1,0 +1,36 @@
+# ==================== 阶段一：Maven 构建 ====================
+FROM maven:3.9-eclipse-temurin-17-alpine AS builder
+
+WORKDIR /build
+
+# 先复制所有 pom.xml，利用缓存加速依赖下载
+COPY pom.xml .
+COPY backend-common/pom.xml backend-common/
+COPY backend-main/pom.xml backend-main/
+COPY backend-sandbox/pom.xml backend-sandbox/
+
+# 下载依赖（仅在 pom.xml 变动时重新执行）
+RUN mvn dependency:go-offline -B
+
+# 复制所有模块源码（backend-main 依赖了 backend-sandbox 的类，必须全部带上）
+COPY backend-common/src backend-common/src
+COPY backend-main/src backend-main/src
+COPY backend-sandbox/src backend-sandbox/src
+
+# 打包整个父项目（保证模块间依赖都能解析），跳过测试
+RUN mvn clean package -DskipTests -B
+
+# ==================== 阶段二：运行 ====================
+FROM eclipse-temurin:17-jre-alpine
+
+WORKDIR /app
+
+# 复制 jar 包
+COPY --from=builder /build/backend-main/target/*.jar app.jar
+
+# JVM 优化参数：容器环境下自动检测 CPU/内存
+ENV JAVA_OPTS="-Xms256m -Xmx512m -XX:+UseContainerSupport"
+
+EXPOSE 8802
+
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
