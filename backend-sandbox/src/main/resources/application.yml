@@ -3,3 +3,12 @@ spring:
     name: backend-sanbox
 server:
   port: 8801
+
+sandbox:
+  pool:
+    # 启动时预创建的容器数量（类似 corePoolSize）
+    init-size: 2
+    # 允许创建的最大容器数量（类似 maximumPoolSize）
+    max-size: 10
+    # 空闲容器的保活时间（毫秒），超过该时间未被再次使用则会被销毁（仅针对超过 init-size 的多余容器）
+    keep-alive-millis: 300000

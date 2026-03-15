@@ -1,0 +1,64 @@
+version: '3.8'
+
+# ============================================================
+# co-coding OJ 完整部署
+# 首次部署前先执行：bash init.sh（构建 oj-java:1.0 沙箱镜像）
+# ============================================================
+
+services:
+
+  # ---------- 前端（Vue3 + Nginx） ----------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: co-coding-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend-main
+    restart: unless-stopped
+    networks:
+      - co-coding
+
+  # ---------- 后端主服务 ----------
+  backend-main:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.main
+    container_name: co-coding-backend-main
+    ports:
+      - "8802:8802"
+    environment:
+      # Spring Boot 支持用环境变量覆盖 yml 配置（. 换成 _ 并全大写）
+      # 把沙箱地址改为容器内服务名（容器间通过服务名互通）
+      - SANDBOX_URL=http://backend-sandbox:8801
+    depends_on:
+      - backend-sandbox
+    restart: unless-stopped
+    networks:
+      - co-coding
+
+  # ---------- 代码沙箱服务 ----------
+  backend-sandbox:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.sandbox
+    container_name: co-coding-sandbox
+    ports:
+      - "8801:8801"
+    environment:
+      # 容器池参数，可在 .env 文件中覆盖，不传则使用下方默认值
+      - SANDBOX_POOL_INIT_SIZE=${SANDBOX_POOL_INIT_SIZE:-2}
+      - SANDBOX_POOL_MAX_SIZE=${SANDBOX_POOL_MAX_SIZE:-10}
+      - SANDBOX_POOL_KEEP_ALIVE_MILLIS=${SANDBOX_POOL_KEEP_ALIVE_MILLIS:-300000}
+    volumes:
+      # 挂载宿主机 Docker socket，让沙箱能创建容器执行用户代码
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
+    networks:
+      - co-coding
+
+networks:
+  co-coding:
+    driver: bridge
