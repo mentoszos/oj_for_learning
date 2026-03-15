@@ -17,6 +17,7 @@ import com.codecollab.oj.mapper.MqMessageLogMapper;
 import com.codecollab.oj.mapper.QuestionSubmitMapper;
 import com.codecollab.oj.mapper.QuestionUsecaseMapper;
 import com.codecollab.oj.model.dto.DebugRequest;
+import com.codecollab.oj.model.dto.DebugTaskMessage;
 import com.codecollab.oj.model.dto.ExecuteCodeRequest;
 import com.codecollab.oj.model.dto.ExecuteCodeResponse;
 import com.codecollab.oj.model.dto.SubmitRequest;
@@ -49,11 +50,13 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 判题服务实现（Demo版本，使用Mock判题）
@@ -75,6 +78,13 @@ public class JudgeServiceImpl implements JudgeService {
     private MqMessageLogMapper mqMessageLogMapper;
     @Value("${sandbox.url}")
     private String baseUrl;
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;
+
+    private static final String DEBUG_RESULT_KEY_PREFIX = "debug:result:";
+    private static final long DEBUG_POLL_TIMEOUT_MS = 30_000;
+    private static final long DEBUG_POLL_INTERVAL_MS = 200;
+    private static final long DEBUG_RESULT_TTL_SECONDS = 60;
     @Override
     @Transactional(rollbackFor = Exception.class,propagation = Propagation.REQUIRES_NEW)
     public SubmitResultVO submitCode(SubmitRequest request) {
@@ -412,59 +422,111 @@ public class JudgeServiceImpl implements JudgeService {
 
     @Override
     public DebugVO debugCode(DebugRequest request) {
-        ExecuteCodeRequest executeCodeRequest = new ExecuteCodeRequest();
-        executeCodeRequest.setLanguageType(request.getSubmitLanguageType());
-        executeCodeRequest.setCode(request.getCode());
-        LambdaQueryWrapper<QuestionUsecase> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.select( QuestionUsecase::getTimeLimit, QuestionUsecase::getMemoryLimit);
-        queryWrapper.eq(QuestionUsecase::getQuestionId, request.getQuestionId())
-                .eq(QuestionUsecase::getActive, true)
-                .last("limit 1");
-        QuestionUsecase usecase = questionUsecaseMapper.selectOne(queryWrapper);
-        ArrayList<String> inputs = new ArrayList<>();
-        ArrayList<Long> timeLimits = new ArrayList<>();
-        ArrayList<Double> memoryLimits = new ArrayList<>();
-        inputs.add(request.getInput());
-        timeLimits.add(Long.valueOf(usecase.getTimeLimit()));
-        memoryLimits.add(usecase.getMemoryLimit());
+        // 模仿 submit：发到 debug 队列，由消费者调沙箱，结果通过 Redis 回写，此处轮询等待
+        String requestId = "debug-" + IdWorker.getId();
+        DebugTaskMessage message = new DebugTaskMessage(requestId, request);
+        rabbitTemplate.convertAndSend(MqConstants.DEBUG_EXCHANGE_NAME, MqConstants.DEBUG_ROUTING_KEY, message);
 
-        executeCodeRequest.setInputs(inputs);
-        executeCodeRequest.setMemoryLimits(memoryLimits);
-        executeCodeRequest.setTimeLimits(timeLimits);
-
-//        ExecuteCodeResponse executeCodeResponse = codeSandbox.executeCode(executeCodeRequest);
-        String jsonString = JSONObject.toJSONString(executeCodeRequest);
-        CloseableHttpClient http = HttpClientBuilder.create().build();
-        ClassicHttpRequest build = ClassicRequestBuilder.post("http://localhost:8801/sandbox/execute").setEntity(jsonString, ContentType.APPLICATION_JSON).build();
-        ExecuteCodeResponse executeCodeResponse = null;
-        try {
-            CloseableHttpResponse res = http.execute(build);
-            HttpEntity entity = res.getEntity();
-            try {
-                String string = EntityUtils.toString(entity, StandardCharsets.UTF_8);
-                executeCodeResponse = JSONUtil.toBean(string, ExecuteCodeResponse.class);
-
-            } catch (ParseException e) {
-                throw new RuntimeException(e);
+        long deadline = System.currentTimeMillis() + DEBUG_POLL_TIMEOUT_MS;
+        String redisKey = DEBUG_RESULT_KEY_PREFIX + requestId;
+        while (System.currentTimeMillis() < deadline) {
+            String json = stringRedisTemplate.opsForValue().get(redisKey);
+            if (json != null) {
+                stringRedisTemplate.delete(redisKey);
+                return JSONUtil.toBean(json, DebugVO.class);
             }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+            try {
+                TimeUnit.MILLISECONDS.sleep(DEBUG_POLL_INTERVAL_MS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new BusinessException(ErrorCode.SYSTEM_ERROR, "debug 等待结果被中断");
+            }
         }
-
-        String errMsg = executeCodeResponse.getErrMsg();
-        DebugVO debugVO = new DebugVO();
-        debugVO.setErrMsg(errMsg);
-        if (errMsg==null){
-            ExecuteMessage executeMessage = executeCodeResponse.getExecuteMessages().get(0);
-//        SubmitStatus submitStatus = executeCodeResponse.getSubmitStatus();
-            debugVO.setErrMsg(executeMessage.getErrMessage());
-            debugVO.setMemory(executeMessage.getMemory());
-            debugVO.setTime(executeMessage.getTime());
-//        debugVO.setSubmitStatus(submitStatus);
-            debugVO.setOutputText(executeMessage.getOutput());
-        }
-        return debugVO;
+        throw new BusinessException(ErrorCode.SYSTEM_ERROR, "debug 执行超时，请稍后重试");
     }
+
+    /**
+     * 消费 debug 队列：调沙箱执行，将结果写入 Redis 供 debugCode 轮询获取。
+     */
+    @RabbitListener(queues = MqConstants.DEBUG_QUEUE)
+    public void onDebug(DebugTaskMessage message) {
+        String requestId = message.getRequestId();
+        DebugRequest request = message.getRequest();
+        String redisKey = DEBUG_RESULT_KEY_PREFIX + requestId;
+        DebugVO debugVO = new DebugVO();
+        try {
+            ExecuteCodeRequest executeCodeRequest = new ExecuteCodeRequest();
+            executeCodeRequest.setLanguageType(request.getSubmitLanguageType());
+            executeCodeRequest.setCode(request.getCode());
+            LambdaQueryWrapper<QuestionUsecase> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.select(QuestionUsecase::getTimeLimit, QuestionUsecase::getMemoryLimit);
+            queryWrapper.eq(QuestionUsecase::getQuestionId, request.getQuestionId())
+                    .eq(QuestionUsecase::getActive, true)
+                    .last("limit 1");
+            QuestionUsecase usecase = questionUsecaseMapper.selectOne(queryWrapper);
+            ArrayList<String> inputs = new ArrayList<>();
+            ArrayList<Long> timeLimits = new ArrayList<>();
+            ArrayList<Double> memoryLimits = new ArrayList<>();
+            inputs.add(request.getInput());
+            timeLimits.add(Long.valueOf(usecase.getTimeLimit()));
+            memoryLimits.add(usecase.getMemoryLimit());
+            executeCodeRequest.setInputs(inputs);
+            executeCodeRequest.setMemoryLimits(memoryLimits);
+            executeCodeRequest.setTimeLimits(timeLimits);
+
+            // 调沙箱（原 debug 接口直接调沙箱的逻辑移到这里）
+            String jsonString = JSONObject.toJSONString(executeCodeRequest);
+            try (CloseableHttpClient http = HttpClientBuilder.create().build()) {
+                ClassicHttpRequest build = ClassicRequestBuilder.post(baseUrl + "/sandbox/execute").setEntity(jsonString, ContentType.APPLICATION_JSON).build();
+                try (CloseableHttpResponse res = http.execute(build)) {
+                    HttpEntity entity = res.getEntity();
+                    String string = EntityUtils.toString(entity, StandardCharsets.UTF_8);
+                    ExecuteCodeResponse executeCodeResponse = JSONUtil.toBean(string, ExecuteCodeResponse.class);
+                    String errMsg = executeCodeResponse.getErrMsg();
+                    debugVO.setErrMsg(errMsg);
+                    if (errMsg == null && executeCodeResponse.getExecuteMessages() != null && !executeCodeResponse.getExecuteMessages().isEmpty()) {
+                        ExecuteMessage executeMessage = executeCodeResponse.getExecuteMessages().get(0);
+                        debugVO.setErrMsg(executeMessage.getErrMessage());
+                        debugVO.setMemory(executeMessage.getMemory());
+                        debugVO.setTime(executeMessage.getTime());
+                        debugVO.setOutputText(executeMessage.getOutput());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.error("debug 消费执行异常, requestId={}", requestId, e);
+            debugVO.setErrMsg("执行异常: " + e.getMessage());
+        }
+        stringRedisTemplate.opsForValue().set(redisKey, JSONUtil.toJsonStr(debugVO), DEBUG_RESULT_TTL_SECONDS, TimeUnit.SECONDS);
+    }
+
+    // ---------- 以下为原 debug 接口「直接调沙箱」逻辑，已改为走 debug 队列 + onDebug 消费，此处保留注释供参考 ----------
+    //    @Override
+    //    public DebugVO debugCode(DebugRequest request) {
+    //        ExecuteCodeRequest executeCodeRequest = new ExecuteCodeRequest();
+    //        executeCodeRequest.setLanguageType(request.getSubmitLanguageType());
+    //        executeCodeRequest.setCode(request.getCode());
+    //        LambdaQueryWrapper<QuestionUsecase> queryWrapper = new LambdaQueryWrapper<>();
+    //        queryWrapper.select( QuestionUsecase::getTimeLimit, QuestionUsecase::getMemoryLimit);
+    //        queryWrapper.eq(QuestionUsecase::getQuestionId(), request.getQuestionId())
+    //                .eq(QuestionUsecase::getActive, true)
+    //                .last("limit 1");
+    //        QuestionUsecase usecase = questionUsecaseMapper.selectOne(queryWrapper);
+    //        ArrayList<String> inputs = new ArrayList<>();
+    //        ArrayList<Long> timeLimits = new ArrayList<>();
+    //        ArrayList<Double> memoryLimits = new ArrayList<>();
+    //        inputs.add(request.getInput());
+    //        timeLimits.add(Long.valueOf(usecase.getTimeLimit()));
+    //        memoryLimits.add(usecase.getMemoryLimit());
+    //        executeCodeRequest.setInputs(inputs);
+    //        executeCodeRequest.setMemoryLimits(memoryLimits);
+    //        executeCodeRequest.setTimeLimits(timeLimits);
+    //        String jsonString = JSONObject.toJSONString(executeCodeRequest);
+    //        CloseableHttpClient http = HttpClientBuilder.create().build();
+    //        ClassicHttpRequest build = ClassicRequestBuilder.post("http://localhost:8801/sandbox/execute").setEntity(jsonString, ContentType.APPLICATION_JSON).build();
+    //        ...
+    //        return debugVO;
+    //    }
 
 
     //校验输出与答案是否正确

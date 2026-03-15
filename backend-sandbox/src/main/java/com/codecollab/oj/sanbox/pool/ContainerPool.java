@@ -50,6 +50,13 @@ public class ContainerPool {
     private long keepAliveMillis;
 
     /**
+     * 借阅容器超时时间（毫秒）。池满时最多等待这么久，超时则抛异常（拒绝策略，快速失败）。
+     * 设为 0 或负数表示无限等待（沿用原 take() 阻塞行为）。
+     */
+    @Value("${sandbox.pool.borrow-timeout-ms:30000}")
+    private long borrowTimeoutMs;
+
+    /**
      * 记录每个容器上次“归还到池中”的时间
      */
     private final Map<String, Long> lastUsedTime = new ConcurrentHashMap<>();
@@ -102,8 +109,13 @@ public class ContainerPool {
             }
         }
 
-        // 3. 已达到最大容量，则阻塞等待有空闲容器归还（类似线程池的队列阻塞行为）
+        // 3. 已达到最大容量：带超时的等待（拒绝策略），超时则快速失败，避免无限阻塞占满线程/连接
         try {
+            if (borrowTimeoutMs > 0) {
+                DockerContainer c = containers.poll(borrowTimeoutMs, TimeUnit.MILLISECONDS);
+                if (c != null) return c;
+                throw new IllegalStateException("获取容器超时，沙箱繁忙，请稍后重试（borrow-timeout-ms=" + borrowTimeoutMs + "）");
+            }
             return containers.take();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

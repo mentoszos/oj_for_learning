@@ -10,6 +10,8 @@ import org.springframework.context.annotation.Configuration;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.codecollab.oj.constants.MqConstants.DEBUG_EXCHANGE_NAME;
+import static com.codecollab.oj.constants.MqConstants.DEBUG_ROUTING_KEY;
 import static com.codecollab.oj.constants.MqConstants.JUDGE_EXCHANGE_NAME;
 import static com.codecollab.oj.constants.MqConstants.ROUTING_KEY;
 
@@ -63,6 +65,23 @@ public class RabbitMQConfig {
     public Binding bindingTask(){
         return BindingBuilder.bind(judgeQueue()).to(judgeExchange()).with(ROUTING_KEY);
     }
+
+    // ---------- Debug 队列（模仿 submit 走 MQ） ----------
+    @Bean
+    public Queue debugQueue() {
+        return new Queue(MqConstants.DEBUG_QUEUE, true, false, false);
+    }
+
+    @Bean
+    public DirectExchange debugExchange() {
+        return new DirectExchange(DEBUG_EXCHANGE_NAME);
+    }
+
+    @Bean
+    public Binding bindingDebug() {
+        return BindingBuilder.bind(debugQueue()).to(debugExchange()).with(DEBUG_ROUTING_KEY);
+    }
+
     @Bean
     public MessageConverter messageConverter() {
 
